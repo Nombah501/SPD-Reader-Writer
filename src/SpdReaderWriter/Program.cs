@@ -10,8 +10,10 @@
 */
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Threading;
 using SpdReaderWriterCore;
 
 namespace SpdReaderWriter {
@@ -28,7 +30,7 @@ namespace SpdReaderWriter {
             // Enable RTS
             rtsEnable: true,
             // Response timeout (sec.)
-            timeout: 10);
+            timeout: 5);
 
         /// <summary>
         /// SMBus instance
@@ -97,7 +99,7 @@ namespace SpdReaderWriter {
                 "   SPD-RW - EEPROM SPD reader and writer",
                 "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
                 "Version {0}",
-                "(C) 2021-2023 A213M",
+                "(C) 2021-2024 A213M",
                 ""
             };
             foreach (string line in header) {
@@ -122,7 +124,7 @@ namespace SpdReaderWriter {
                 "{0} /enablewriteprotection <PORTNAME<:baudrate>> <ADDRESS#|ALL> <block#>",
                 "{0} /disablewriteprotection <PORTNAME<:baudrate>> <ADDRESS#|ALL>",
                 "{0} /enablepermanentwriteprotection <PORTNAME<:baudrate>> <ADDRESS#|ALL>",
-                "{0} /readpci <BUS#>:<DEVICE#>:<FUNCTION#> <size|256|1024> <filepath>",
+                "{0} /readpci <BUS#>:<DEVICE#>:<FUNCTION#> <size|256|4096> <filepath>",
                 "{0} /readio <PORT#> <size> <filepath>",
                 "{0} /readmem <ADDRESS#> <size> <filepath>",                
                 "",
@@ -717,9 +719,20 @@ namespace SpdReaderWriter {
         private static void FindDevice() {
 
             if (Args.Length == 1 || (Args.Length >= 2 && Args[1].ToLower() == "all")) {
-                FindArduino();
+
+                List<Thread> findThreads = new List<Thread>();
+
                 if (Global.IsAdmin()) {
-                    FindSmbus();
+                    Thread findSmbusThread = new Thread(FindSmbus);
+                    findThreads.Add(findSmbusThread);
+                }
+
+                Thread findArduinoThread = new Thread(FindArduino);
+                findThreads.Add(findArduinoThread);
+
+                foreach (Thread findThread in findThreads) {
+                    findThread.Start();
+                    findThread.Join();
                 }
             }
             else if (Args.Length >= 2) {
@@ -769,12 +782,13 @@ namespace SpdReaderWriter {
 
             smbus = new Smbus();
 
-            try {
-                foreach (byte bus in smbus.SmBuses) {
+            byte[] smBuses = smbus.SmBuses;
+            if (smBuses.Length > 0) {
+                foreach (byte bus in smBuses) {
                     Console.WriteLine($"Found SMBus # {bus} ({smbus})");
                 }
             }
-            catch {
+            else {
                 Console.WriteLine("No SMBus found");
             }
         }
@@ -784,7 +798,7 @@ namespace SpdReaderWriter {
         /// </summary>
         /// <param name="data">Input data</param>
         static bool TrySaveOutput(byte[] data) {
-            if (FilePath != "") {
+            if (!String.IsNullOrEmpty(FilePath)) {
                 try {
                     File.WriteAllBytes(FilePath, data);
                     return true;
