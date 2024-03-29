@@ -284,6 +284,15 @@ namespace SpdReaderWriterCore {
             (ConvertTo<ulong>(input) & ConvertTo<ulong>(bitmask)) == ConvertTo<ulong>(bitmask);
 
         /// <summary>
+        /// Checks whether bitmask value partially matches input value
+        /// </summary>
+        /// <param name="input">Input value</param>
+        /// <param name="bitmask">Bitmask value</param>
+        /// <returns><see langword="true"/> if <paramref name="bitmask"/> value partially matches <paramref name="input"/> value</returns>
+        public static bool ContainsBitmask(object input, object bitmask) =>
+            (ConvertTo<ulong>(input) & ConvertTo<ulong>(bitmask)) > 0;
+
+        /// <summary>
         /// Converts boolean value to a number
         /// </summary>
         /// <param name="input">Boolean input</param>
@@ -1224,6 +1233,10 @@ namespace SpdReaderWriterCore {
 
             if (item == null) {
                 throw new NullReferenceException(nameof(item));
+            }
+
+            if (input.Length == 0) {
+                return false;
             }
 
             if (startIndex > endIndex) {
