@@ -90,8 +90,8 @@ namespace SpdReaderWriterCore {
         /// Parity type
         /// </summary>
         public enum Parity : byte {
-            Odd,
-            Even
+            Even,
+            Odd
         }
 
         /// <summary>

@@ -111,7 +111,7 @@ namespace SpdReaderWriterCore {
         /// <summary>
         /// Global ISA access mutex
         /// </summary>
-        internal static Mutex IsaMutex = CreateMutex(@"Global\Access_ISABUS.HTP.Method");
+        internal static Mutex IsaMutex = CreateMutex("Global\\Access_ISABUS.HTP.Method");
 
         /// <summary>
         /// Global ISA access mutex timeout

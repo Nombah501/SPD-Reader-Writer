@@ -51,21 +51,21 @@ namespace SpdReaderWriterCore {
         /// </summary>
         /// <param name="smbus">SMBus controller instance</param>
         /// <param name="offset">Byte offset</param>
-        /// <param name="count">Total number of bytes to read from <paramref name="offset"/></param>
+        /// <param name="length">Total number of bytes to read from <paramref name="offset"/></param>
         /// <returns>A byte array containing byte values</returns>
-        public static byte[] Read(Smbus smbus, ushort offset, int count) {
+        public static byte[] Read(Smbus smbus, ushort offset, int length) {
 
-            if (count == 0 || offset + count > DDR5) {
-                throw new ArgumentOutOfRangeException(nameof(count));
+            if (length == 0 || offset + length > DDR5) {
+                throw new ArgumentOutOfRangeException(nameof(length));
             }
 
             if (!LockMutex(Smbus.SmbusMutex, Smbus.SmbusMutexTimeout)) {
                 throw new TimeoutException(nameof(Smbus.SmbusMutexTimeout));
             }
 
-            byte[] data = new byte[count];
+            byte[] data = new byte[length];
 
-            for (ushort i = 0; i < count; i++) {
+            for (ushort i = 0; i < length; i++) {
                 data[i] = Read(smbus, (ushort)(i + offset));
             }
 
@@ -90,7 +90,7 @@ namespace SpdReaderWriterCore {
             AdjustPageAddress(smbus, offset);
             AdjustOffset(smbus, ref offset);
 
-            bool result =  smbus.I2CWrite(smbus.I2CAddress, offset, value);
+            bool result = smbus.I2CWrite(smbus.I2CAddress, offset, value);
 
             UnlockMutex(Smbus.SmbusMutex);
 
@@ -414,12 +414,12 @@ namespace SpdReaderWriterCore {
         /// </summary>
         /// <param name="arduino">SPD reader/writer device instance</param>
         /// <param name="offset">Byte position to start reading from</param>
-        /// <param name="count">Total number of bytes to read from <paramref name="offset"/> </param>
+        /// <param name="length">Total number of bytes to read from <paramref name="offset"/></param>
         /// <returns>A byte array containing byte values</returns>
-        public static byte[] Read(Arduino arduino, ushort offset, byte count) {
+        public static byte[] Read(Arduino arduino, ushort offset, byte length) {
 
-            if (count == 0) {
-                throw new ArgumentOutOfRangeException(nameof(count));
+            if (length == 0) {
+                throw new ArgumentOutOfRangeException(nameof(length));
             }
 
             if (!CheckOffset(arduino, offset)) {
@@ -432,7 +432,7 @@ namespace SpdReaderWriterCore {
                     arduino.I2CAddress,
                     (byte)(offset >> 8), // MSB
                     (byte)offset,        // LSB
-                    count);
+                    length);
             }
             catch {
                 throw new Exception($"Unable to read byte # 0x{offset:X4} at {arduino.PortName}:{arduino.I2CAddress}");
@@ -465,10 +465,6 @@ namespace SpdReaderWriterCore {
         /// <returns><see langword="true"/> if <paramref name="value"/> is written to <paramref name="offset"/></returns>
         public static bool Write(Arduino arduino, ushort offset, byte[] value) {
 
-            if (!CheckOffset(arduino, offset) || !CheckPageSize(value)) {
-                return false;
-            }
-
             // Prepare command
             byte[] command = {
                 (byte) SpdWritePage,
@@ -479,7 +475,9 @@ namespace SpdReaderWriterCore {
             };
 
             try {
-                return arduino.ExecuteCommand<bool>(MergeArray(command, value));
+                return CheckOffset(arduino, offset) &&
+                       CheckPageSize(value) &&
+                       arduino.ExecuteCommand<bool>(MergeArray(command, value));
             }
             catch {
                 throw new Exception($"Unable to write page of {value.Length} byte(s) to # 0x{offset:X4} at {arduino.PortName}:{arduino.I2CAddress}");
@@ -510,13 +508,10 @@ namespace SpdReaderWriterCore {
         /// <param name="value">Page contents</param>
         /// <returns><see langword="true"/> if page read at <paramref name="offset"/> matches <paramref name="value"/></returns>
         public static bool Update(Arduino arduino, ushort offset, byte[] value) {
-
-            if (!CheckOffset(arduino, offset) || !CheckPageSize(value)) {
-                return false;
-            }
-
             try {
-                return Verify(arduino, offset, value) || Write(arduino, offset, value);
+                return CheckOffset(arduino, offset) &&
+                       CheckPageSize(value) &&
+                       (Verify(arduino, offset, value) || Write(arduino, offset, value));
             }
             catch {
                 throw new Exception($"Unable to update page at # 0x{offset:X4} with \"0x{value:X2}\" at {arduino.PortName}:{arduino.I2CAddress}");
@@ -654,18 +649,16 @@ namespace SpdReaderWriterCore {
         /// <param name="arduino">Device instance</param>
         /// <param name="offset">Byte position</param>
         /// <returns><see langword="true"/> if <paramref name="offset"/> is within <paramref name="arduino"/>'s EEPROM</returns>
-        private static bool CheckOffset(Arduino arduino, ushort offset) {
-            return offset <= arduino.MaxSpdSize;
-        }
-        
+        private static bool CheckOffset(Arduino arduino, ushort offset) =>
+            offset < arduino.MaxSpdSize;
+
         /// <summary>
         /// Validates page size
         /// </summary>
         /// <param name="value">Page contents</param>
         /// <returns><see langword="true"/> if <paramref name="value"/> length is within page size</returns>
-        private static bool CheckPageSize(byte[] value) {
-            return 0 < value.Length && value.Length <= 16;
-        }
+        private static bool CheckPageSize(byte[] value) =>
+            0 < value.Length && value.Length <= 16;
 
         #endregion
 

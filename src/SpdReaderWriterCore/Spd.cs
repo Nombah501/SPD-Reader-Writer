@@ -13,14 +13,14 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Text;
-using SpdReaderWriterCore.Properties;
+using SpdReaderWriterCore.SPD;
 
 namespace SpdReaderWriterCore {
 
     /// <summary>
     /// SPD class to deal with SPD data
     /// </summary>
-    public partial class Spd {
+    public class Spd {
 
         /// <summary>
         /// Gets RAM type present on the device's I2C bus
@@ -63,7 +63,9 @@ namespace SpdReaderWriterCore {
         public static RamType GetRamType(byte[] input) {
 
             // Byte at offset 2 in SPD indicates RAM type
-            return input.Length >= 3 && Enum.IsDefined(typeof(RamType), (RamType)input[2]) ? (RamType)input[2] : RamType.UNKNOWN;
+            return input.Length >= 3 && Enum.IsDefined(typeof(RamType), (RamType)input[2])
+                ? (RamType)input[2]
+                : RamType.UNKNOWN;
         }
 
         /// <summary>
@@ -200,7 +202,7 @@ namespace SpdReaderWriterCore {
             byte spdManufacturerCode = Data.SetBit((byte)input, 7, false); // Ignore parity bit
 
             if (spdContinuationCode > Resources.Database.IdCodes.Length - 1) {
-                return "";
+                return "?";
             }
 
             // Decompress database
@@ -480,14 +482,14 @@ namespace SpdReaderWriterCore {
                        d1.ManufacturerCode != d2.ManufacturerCode;
             }
 
-            public override bool Equals(object o) {
-                if (o != null && o.GetType() != typeof(ManufacturerIdCodeData)) {
+            public override bool Equals(object obj) {
+                if (obj != null && obj.GetType() != typeof(ManufacturerIdCodeData)) {
                     return false;
                 }
 
-                return o != null &&
-                       ContinuationCode.Equals(((ManufacturerIdCodeData)o).ContinuationCode) &&
-                       ManufacturerCode.Equals(((ManufacturerIdCodeData)o).ManufacturerCode);
+                return obj != null &&
+                       ContinuationCode.Equals(((ManufacturerIdCodeData)obj).ContinuationCode) &&
+                       ManufacturerCode.Equals(((ManufacturerIdCodeData)obj).ManufacturerCode);
             }
 
             public override int GetHashCode() {

@@ -575,7 +575,7 @@ namespace SpdReaderWriterCore {
         /// <summary>
         /// Global PCI access mutex
         /// </summary>
-        internal static Mutex PciMutex = CreateMutex(@"Global\Access_PCI");
+        internal static Mutex PciMutex = CreateMutex("Global\\Access_PCI");
 
         /// <summary>
         /// Global PCI access mutex timeout

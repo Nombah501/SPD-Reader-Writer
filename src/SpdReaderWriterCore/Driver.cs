@@ -748,7 +748,10 @@ namespace SpdReaderWriterCore {
         /// <summary>
         /// Service controller for the driver
         /// </summary>
-        private static ServiceController Service => DriverInfo.ServiceName != null ? new ServiceController(DriverInfo.ServiceName) : null;
+        private static ServiceController Service =>
+            DriverInfo.ServiceName != null
+                ? new ServiceController(DriverInfo.ServiceName)
+                : null;
 
         /// <summary>
         /// Service control manager

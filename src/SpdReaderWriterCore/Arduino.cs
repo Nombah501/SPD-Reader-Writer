@@ -83,7 +83,7 @@ namespace SpdReaderWriterCore {
         /// </summary>
         public struct SerialPortParameters {
             // Connection settings
-            public int  BaudRate;
+            public int BaudRate;
             public bool DtrEnable;
             public bool RtsEnable;
 
@@ -213,7 +213,7 @@ namespace SpdReaderWriterCore {
                         continue;
                     }
 
-                    IsReady = _sp.ReadByte() == (byte)Alert.READY; // 0x21 ('!')
+                    IsReady = ReadIncomingByte() == (byte)Alert.READY; // 0x21 ('!')
                 }
                 sw.Stop();
 #if DEBUG
