@@ -1361,6 +1361,50 @@ namespace SpdReaderWriterCore {
         }
 
         /// <summary>
+        /// Returns the greatest of two values
+        /// </summary>
+        /// <typeparam name="T">Input data type</typeparam>
+        /// <param name="input1">First value</param>
+        /// <param name="input2">Second value</param>
+        /// <returns><paramref name="input1"/> if is greater than or equal to <paramref name="input2"/>, otherwise <paramref name="input2"/></returns>
+        public static T Maximum<T>(T input1, T input2) {
+
+            if (input1 == null) {
+                throw new ArgumentNullException(nameof(input1));
+            }
+
+            if (input2 == null) {
+                throw new ArgumentNullException(nameof(input2));
+            }
+
+            return ((IComparable)input1).CompareTo((IComparable)input2) != 1 
+                ? input2 
+                : input1;
+        }
+
+        /// <summary>
+        /// Returns the least of two values
+        /// </summary>
+        /// <typeparam name="T">Input data type</typeparam>
+        /// <param name="input1">First value</param>
+        /// <param name="input2">Second value</param>
+        /// <returns><paramref name="input1"/> if it is less than or equal to <paramref name="input2"/>, otherwise <paramref name="input2"/></returns>
+        public static T Minimum<T>(T input1, T input2) {
+
+            if (input1 == null) {
+                throw new ArgumentNullException(nameof(input1));
+            }
+
+            if (input2 == null) {
+                throw new ArgumentNullException(nameof(input2));
+            }
+
+            return ((IComparable)input1).CompareTo((IComparable)input2) == 1
+                ? input2
+                : input1;
+        }
+
+        /// <summary>
         /// Converts input object into specified data type
         /// </summary>
         /// <typeparam name="T">Data type</typeparam>
