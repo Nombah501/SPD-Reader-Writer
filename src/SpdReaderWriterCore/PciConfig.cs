@@ -257,7 +257,7 @@ namespace SpdReaderWriterCore {
         /// and <paramref name="deviceId">Device ID</paramref></returns>
         public static PciConfig[] FindDevicesById(VendorId vendorId, DeviceId deviceId, int maxCount) {
 
-            if (maxCount > MaxPciCount || maxCount == 0) {
+            if (IsOutside(maxCount, 1, MaxPciCount)) {
                 throw new ArgumentOutOfRangeException(nameof(maxCount));
             }
 
@@ -383,7 +383,7 @@ namespace SpdReaderWriterCore {
         /// and <paramref name="programIf"/></returns>
         public static PciConfig[] FindDevicesByClass(BaseClassType baseClass, SubClassType subClass, ProgramIf programIf, int maxCount) {
 
-            if (maxCount > MaxPciCount || maxCount == 0) {
+            if (IsOutside(maxCount, 1, MaxPciCount)) {
                 throw new ArgumentOutOfRangeException(nameof(maxCount));
             }
 

@@ -114,7 +114,7 @@ namespace SpdReaderWriterCore {
                 ulong methodStatusMask = 0;
 
                 // Check if all functions are present
-                //if (_driverInfo.Setup               == null) { SetBit(ref methodStatusMask, i, true); } i++;
+                if (_driverInfo.Setup                 == null) { SetBit(ref methodStatusMask, i, true); } i++;
                 if (_driverInfo.GetDriverVersion      == null) { SetBit(ref methodStatusMask, i, true); } i++;
                 if (_driverInfo.ReadIoPortByte        == null) { SetBit(ref methodStatusMask, i, true); } i++;
                 if (_driverInfo.ReadIoPortByteEx      == null) { SetBit(ref methodStatusMask, i, true); } i++;

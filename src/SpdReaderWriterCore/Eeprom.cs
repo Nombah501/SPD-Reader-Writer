@@ -186,7 +186,7 @@ namespace SpdReaderWriterCore {
 
             switch (smbus.MaxSpdSize) {
                 case Unknown:
-                case Minimum:
+                case Spd.DataLength.Minimum:
                     return;
                 case DDR4 when eepromPageNumber > 1:
                 case DDR5 when eepromPageNumber > 15:
@@ -216,7 +216,7 @@ namespace SpdReaderWriterCore {
                 return;
             }
 
-            if (smbus.MaxSpdSize >= Minimum) {
+            if (smbus.MaxSpdSize >= Spd.DataLength.Minimum) {
                 if (offset > smbus.MaxSpdSize) {
                     throw new IndexOutOfRangeException(nameof(offset));
                 }
@@ -281,7 +281,7 @@ namespace SpdReaderWriterCore {
         /// <returns><see langword="true"/> when the write protection has been enabled on block <paramref name="block"/></returns>
         public static bool SetRswp(Smbus smbus, byte block) {
 
-            if ((smbus.MaxSpdSize == Minimum && block >= 1) ||
+            if ((smbus.MaxSpdSize == Spd.DataLength.Minimum && block >= 1) ||
                 (smbus.MaxSpdSize == DDR4 && block >= 4) ||
                 (smbus.MaxSpdSize == DDR5 && block >= 16)) {
                 throw new ArgumentOutOfRangeException(nameof(block));
@@ -658,7 +658,7 @@ namespace SpdReaderWriterCore {
         /// <param name="value">Page contents</param>
         /// <returns><see langword="true"/> if <paramref name="value"/> length is within page size</returns>
         private static bool CheckPageSize(byte[] value) =>
-            0 < value.Length && value.Length <= 16;
+            IsWithin(value.Length, 1, 16);
 
         #endregion
 

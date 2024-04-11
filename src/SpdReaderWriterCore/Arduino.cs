@@ -840,8 +840,7 @@ namespace SpdReaderWriterCore {
             try {
                 bool result = ExecuteCommand<bool>(Command.Spd5HubReg, I2CAddress, register, Command.Enable, value);
 
-                if (register == Eeprom.Spd5Register.MR12 ||
-                    register == Eeprom.Spd5Register.MR13) {
+                if (IsWithin(register, Eeprom.Spd5Register.MR12, Eeprom.Spd5Register.MR13)) {
                     return result && ReadSpd5Hub(register) == value;
                 }
 
@@ -1492,8 +1491,8 @@ namespace SpdReaderWriterCore {
             public byte[] RawBytes {
                 get => _rawBytes;
                 set {
-                    if (MinSize > value.Length || value.Length > MaxSize) {
-                        throw new ArgumentOutOfRangeException(value.Length.ToString());
+                    if (IsOutside(value.Length, MinSize, MaxSize)) {
+                        throw new ArgumentOutOfRangeException(nameof(value));
                     }
 
                     _rawBytes = value;

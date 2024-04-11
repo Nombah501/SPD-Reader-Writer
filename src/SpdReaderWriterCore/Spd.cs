@@ -509,7 +509,7 @@ namespace SpdReaderWriterCore {
                 ushort year = (ushort)(Data.ByteToBinaryCodedDecimal(Year) + 2000);
                 byte week   = Data.ByteToBinaryCodedDecimal(Week);
 
-                return 0 < week && week < 53 ? $"{year:D4}/{week:D2}" : "";
+                return Data.IsBetween(week, 0, 53) ? $"{year:D4}/{week:D2}" : "";
             }
         }
 
@@ -683,12 +683,12 @@ namespace SpdReaderWriterCore {
                 }
 
                 // Reduced
-                if (0x01 <= refPerValue && refPerValue <= 0x02) {
+                if (Data.IsWithin(refPerValue, 0x01, 0x02)) {
                     return normal * 0.25F * refPerValue;
                 }
 
                 // Extended
-                if (0x03 <= refPerValue && refPerValue <= 0x05) {
+                if (Data.IsWithin(refPerValue, 0x03, 0x05)) {
                     return (float)(normal * Math.Pow(2, refPerValue - 1));
                 }
 
