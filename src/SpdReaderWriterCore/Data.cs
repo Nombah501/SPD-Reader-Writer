@@ -435,11 +435,11 @@ namespace SpdReaderWriterCore {
                     return DataSize.Dword;
                 case TypeCode.UInt16:
                 case TypeCode.Int16:
+                case TypeCode.Char:
                     return DataSize.Word;
                 case TypeCode.Boolean:
                 case TypeCode.SByte:
                 case TypeCode.Byte:
-                case TypeCode.Char:
                     return DataSize.Byte;
                 case TypeCode.Empty:
                     return DataSize.Null;
@@ -500,8 +500,8 @@ namespace SpdReaderWriterCore {
         /// <param name="input">Input char to validate</param>
         /// <returns><see langword="true"/> if <paramref name="input"/> is in a HEX format</returns>
         public static bool ValidateHex(char input) =>
-            ('A' <= (input & ~0x20) && (input & ~0x20) <= 'F') ||
-            ('0' <= input && input <= '9');
+            IsWithin(input & ~0x20, 'A', 'F') ||
+            IsWithin(input, '0', '9');
 
         /// <summary>
         /// Converts hex string to number
@@ -681,9 +681,11 @@ namespace SpdReaderWriterCore {
                 throw new NullReferenceException(nameof(input));
             }
 
-            byte b = ConvertTo<byte>(input);
+            if (GetDataSize(input.GetType()) > DataSize.Word) {
+                return false;
+            }
 
-            return 0x20 <= b && b <= 0x7E;
+            return IsWithin(ConvertTo<char>(input), 0x20, 0x7E);
         }
 
         /// <summary>
@@ -692,8 +694,8 @@ namespace SpdReaderWriterCore {
         /// <param name="input">Input string</param>
         /// <returns><see langword="true"/> if <see cref="input"/> contains ASCII characters</returns>
         public static bool IsAscii(string input) {
-            foreach (byte b in Encoding.ASCII.GetBytes(input)) {
-                if (!IsAscii(b)) {
+            foreach (char c in input) {
+                if (!IsAscii(c)) {
                     return false;
                 }
             }
@@ -979,6 +981,8 @@ namespace SpdReaderWriterCore {
         /// <summary>
         /// Compares two arrays
         /// </summary>
+        /// <typeparam name="T1">First array data type</typeparam>
+        /// <typeparam name="T2">Second array data type</typeparam>
         /// <param name="a1">First array</param>
         /// <param name="a2">Second array</param>
         /// <returns><see langword="true"/> if both arrays are equal</returns>
@@ -992,22 +996,17 @@ namespace SpdReaderWriterCore {
                 throw new ArgumentNullException(nameof(a2));
             }
 
-            if (typeof(T1) != typeof(T2)) {
+            if (a1.GetType() != a2.GetType() ||
+                a1.Length != a2.Length) {
                 return false;
             }
 
-            if (a1.Length != a2.Length) {
-                return false;
-            }
-
-            if (a1.Length == a2.Length) {
-                int i = 0;
-                while (i < a1.Length) {
-                    if (!a1[i].Equals(a2[i])) {
-                        return false;
-                    }
-                    i++;
+            int i = 0;
+            while (i < a1.Length) {
+                if (!a1[i].Equals(a2[i])) {
+                    return false;
                 }
+                i++;
             }
 
             return true;
@@ -1366,7 +1365,7 @@ namespace SpdReaderWriterCore {
         /// <typeparam name="T">Input data type</typeparam>
         /// <param name="input1">First value</param>
         /// <param name="input2">Second value</param>
-        /// <returns><paramref name="input1"/> if is greater than or equal to <paramref name="input2"/>, otherwise <paramref name="input2"/></returns>
+        /// <returns><paramref name="input1"/> if is greater than or equals to <paramref name="input2"/>, otherwise <paramref name="input2"/></returns>
         public static T Maximum<T>(T input1, T input2) {
 
             if (input1 == null) {
@@ -1377,8 +1376,8 @@ namespace SpdReaderWriterCore {
                 throw new ArgumentNullException(nameof(input2));
             }
 
-            return ((IComparable)input1).CompareTo((IComparable)input2) != 1 
-                ? input2 
+            return ((IComparable)input1).CompareTo((IComparable)input2) <= -1
+                ? input2
                 : input1;
         }
 
@@ -1388,7 +1387,7 @@ namespace SpdReaderWriterCore {
         /// <typeparam name="T">Input data type</typeparam>
         /// <param name="input1">First value</param>
         /// <param name="input2">Second value</param>
-        /// <returns><paramref name="input1"/> if it is less than or equal to <paramref name="input2"/>, otherwise <paramref name="input2"/></returns>
+        /// <returns><paramref name="input1"/> if it is less than or equals to <paramref name="input2"/>, otherwise <paramref name="input2"/></returns>
         public static T Minimum<T>(T input1, T input2) {
 
             if (input1 == null) {
@@ -1399,10 +1398,102 @@ namespace SpdReaderWriterCore {
                 throw new ArgumentNullException(nameof(input2));
             }
 
-            return ((IComparable)input1).CompareTo((IComparable)input2) == 1
-                ? input2
-                : input1;
+            if (!(input1 is IComparable)) {
+                throw new InvalidDataException(nameof(input1));
+            }
+
+            if (!(input2 is IComparable)) {
+                throw new InvalidDataException(nameof(input2));
+            }
+
+            return ((IComparable)input1).CompareTo((IComparable)input2) <= -1
+                ? input1
+                : input2;
         }
+
+        /// <summary>
+        /// Checks whether input value is between and does not equal to any of two boundary values
+        /// </summary>
+        /// <typeparam name="T">Data type</typeparam>
+        /// <param name="input">Input data</param>
+        /// <param name="item1">First boundary value</param>
+        /// <param name="item2">Second boundary value</param>
+        /// <returns><see langword="true"/> if <paramref name="input"/> is between <paramref name="item1"/> and <paramref name="item2"/> and does not equal </returns>
+        public static bool IsBetween<T>(T input, T item1, T item2) {
+
+            if (input == null) {
+                throw new NullReferenceException(nameof(input));
+            }
+
+            if (item1 == null) {
+                throw new NullReferenceException(nameof(item1));
+            }
+
+            if (item2 == null) {
+                throw new NullReferenceException(nameof(item2));
+            }
+
+            if (input.Equals(item1) ||
+                input.Equals(item2)) {
+                return false;
+            }
+
+            T min = Minimum(item1, item2);
+            T max = Maximum(item1, item2);
+
+            return Minimum(min, input).Equals(min) &&
+                   Maximum(max, input).Equals(max);
+        }
+
+        /// <summary>
+        /// Checks whether input value is inclusively within two items
+        /// </summary>
+        /// <typeparam name="T">Data type</typeparam>
+        /// <param name="input">Input data</param>
+        /// <param name="item1">First boundary value</param>
+        /// <param name="item2">Second boundary value</param>
+        /// <returns><see langword="true"/> if <paramref name="input"/> is between <paramref name="item1"/> and <paramref name="item2"/>
+        /// or if its value equals to <paramref name="item1"/> or <paramref name="item2"/></returns>
+        public static bool IsWithin<T>(T input, T item1, T item2) {
+
+            if (input == null) {
+                throw new NullReferenceException(nameof(input));
+            }
+
+            if (item1 == null) {
+                throw new NullReferenceException(nameof(item1));
+            }
+
+            if (item2 == null) {
+                throw new NullReferenceException(nameof(item2));
+            }
+
+            return input.Equals(item1) ||
+                   input.Equals(item2) ||
+                   IsBetween(input, item1, item2);
+        }
+
+        /// <summary>
+        /// Checks whether input value is within zero and specified upper boundary
+        /// </summary>
+        /// <typeparam name="T">Data type</typeparam>
+        /// <param name="input">Input data</param>
+        /// <param name="item1">Upper boundary</param>
+        /// <returns><see langword="true"/> if <paramref name="input"/> is between <value>0</value> and <paramref name="item1"/>
+        /// or if its value equals to <value>0</value> or <paramref name="item1"/></returns>
+        public static bool IsWithin<T>(T input, T item1) =>
+            !Minimum(ConvertTo<T>(0), item1).Equals(item1) && IsWithin(input, ConvertTo<T>(0), item1);
+
+        /// <summary>
+        /// Checks whether input value is outside of two boundary values
+        /// </summary>
+        /// <typeparam name="T">Data type</typeparam>
+        /// <param name="input">Input data</param>
+        /// <param name="item1">First boundary value</param>
+        /// <param name="item2">Second boundary value</param>
+        /// <returns><see langword="true"/> if <paramref name="input"/> is outside of values within <paramref name="item1"/> and <paramref name="item2"/></returns>
+        public static bool IsOutside<T>(T input, T item1, T item2) =>
+            !IsWithin(input, item1, item2);
 
         /// <summary>
         /// Converts input object into specified data type
