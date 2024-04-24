@@ -506,6 +506,7 @@ namespace SpdReaderWriterCore {
         /// <summary>
         /// Converts hex string to number
         /// </summary>
+        /// <typeparam name="T">Output data type</typeparam>
         /// <param name="input">Hex string</param>
         /// <returns>Numeric value of input hex string</returns>
         public static T HexStringToNumber<T>(string input) {
@@ -520,6 +521,25 @@ namespace SpdReaderWriterCore {
             }
 
             return ConvertTo<T>(Convert.ToUInt64(input, 16));
+        }
+
+        /// <summary>
+        /// Converts hex character to number
+        /// </summary>
+        /// <typeparam name="T">Output data type</typeparam>
+        /// <param name="input">Input character</param>
+        /// <returns>Numeric value of input hex string</returns>
+        public static T HexStringToNumber<T>(char input) {
+            if (ValidateHex(input)) {
+                if (IsWithin(input & ~0x20, 'A', 'F')) {
+                    return ConvertTo<T>((input & 0xF) + 9);
+                }
+                if (IsWithin(input, '0', '9')) {
+                    return ConvertTo<T>(input - 0x30);
+                }
+            }
+
+            throw new ArgumentOutOfRangeException(nameof(input));
         }
 
         /// <summary>
@@ -662,9 +682,8 @@ namespace SpdReaderWriterCore {
 
             StringBuilder sbOutput = new StringBuilder(input.Length);
 
-            for (int i = 0; i < input.Length; i++) {
-                char c = ConvertTo<char>(input[i]);
-                sbOutput.Append(c.ToString());
+            foreach (T t in input) {
+                sbOutput.Append(ConvertTo<char>(t).ToString());
             }
 
             return sbOutput.ToString();
@@ -1244,10 +1263,6 @@ namespace SpdReaderWriterCore {
 
             if (endIndex >= input.Length) {
                 throw new IndexOutOfRangeException($"{nameof(endIndex)} cannot be greater than or equal to {nameof(input)} length");
-            }
-
-            if (input.Length == 0) {
-                return false;
             }
 
             for (int i = startIndex; i <= endIndex; i++) {
