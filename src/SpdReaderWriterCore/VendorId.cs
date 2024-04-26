@@ -16,6 +16,7 @@ namespace SpdReaderWriterCore {
     public enum VendorId : ushort {
         AMD    = 0x1022,
         ATI    = 0x1002, // Former ATI vendor ID which is now owned by AMD, who has 2 vendor IDs
+        Hygon  = 0x1D94,
         Intel  = 0x8086,
         Nvidia = 0x10DE,
         SiS    = 0x1039,
