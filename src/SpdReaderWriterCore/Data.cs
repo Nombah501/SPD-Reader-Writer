@@ -174,10 +174,6 @@ namespace SpdReaderWriterCore {
         /// <returns>Value matching bit pattern at <paramref name="input"/> position of <paramref name="count"/> bits</returns>
         public static T SubByte<T>(T input, int position, int count) {
 
-            if (input == null) {
-                throw new ArgumentNullException(nameof(input));
-            }
-
             if (!IsNumeric(input)) {
                 throw new InvalidDataException(nameof(input));
             }
@@ -886,10 +882,6 @@ namespace SpdReaderWriterCore {
                 throw new ArgumentOutOfRangeException($"{nameof(min)} cannot be greater than {nameof(max)}");
             }
 
-            if (max < min) {
-                throw new ArgumentOutOfRangeException($"{nameof(max)} cannot be less than {nameof(min)}");
-            }
-
             byte[] array = new byte[count];
             byte r;
 
@@ -1245,14 +1237,6 @@ namespace SpdReaderWriterCore {
         /// within <paramref name="startIndex"/> and <paramref name="endIndex"/></returns>
         public static bool ArrayContains<T>(T[] input, T item, int startIndex, int endIndex) {
 
-            if (input == null) {
-                throw new NullReferenceException(nameof(input));
-            }
-
-            if (item == null) {
-                throw new NullReferenceException(nameof(item));
-            }
-
             if (input.Length == 0) {
                 return false;
             }
@@ -1381,20 +1365,10 @@ namespace SpdReaderWriterCore {
         /// <param name="input1">First value</param>
         /// <param name="input2">Second value</param>
         /// <returns><paramref name="input1"/> if is greater than or equals to <paramref name="input2"/>, otherwise <paramref name="input2"/></returns>
-        public static T Maximum<T>(T input1, T input2) {
-
-            if (input1 == null) {
-                throw new ArgumentNullException(nameof(input1));
-            }
-
-            if (input2 == null) {
-                throw new ArgumentNullException(nameof(input2));
-            }
-
-            return ((IComparable)input1).CompareTo((IComparable)input2) <= -1
+        public static T Maximum<T>(T input1, T input2) =>
+            ((IComparable)input1).CompareTo((IComparable)input2) <= -1
                 ? input2
                 : input1;
-        }
 
         /// <summary>
         /// Returns the least of two values
@@ -1404,14 +1378,6 @@ namespace SpdReaderWriterCore {
         /// <param name="input2">Second value</param>
         /// <returns><paramref name="input1"/> if it is less than or equals to <paramref name="input2"/>, otherwise <paramref name="input2"/></returns>
         public static T Minimum<T>(T input1, T input2) {
-
-            if (input1 == null) {
-                throw new ArgumentNullException(nameof(input1));
-            }
-
-            if (input2 == null) {
-                throw new ArgumentNullException(nameof(input2));
-            }
 
             if (!(input1 is IComparable)) {
                 throw new InvalidDataException(nameof(input1));
@@ -1436,18 +1402,6 @@ namespace SpdReaderWriterCore {
         /// <returns><see langword="true"/> if <paramref name="input"/> is between <paramref name="item1"/> and <paramref name="item2"/> and does not equal </returns>
         public static bool IsBetween<T>(T input, T item1, T item2) {
 
-            if (input == null) {
-                throw new NullReferenceException(nameof(input));
-            }
-
-            if (item1 == null) {
-                throw new NullReferenceException(nameof(item1));
-            }
-
-            if (item2 == null) {
-                throw new NullReferenceException(nameof(item2));
-            }
-
             if (input.Equals(item1) ||
                 input.Equals(item2)) {
                 return false;
@@ -1469,24 +1423,10 @@ namespace SpdReaderWriterCore {
         /// <param name="item2">Second boundary value</param>
         /// <returns><see langword="true"/> if <paramref name="input"/> is between <paramref name="item1"/> and <paramref name="item2"/>
         /// or if its value equals to <paramref name="item1"/> or <paramref name="item2"/></returns>
-        public static bool IsWithin<T>(T input, T item1, T item2) {
-
-            if (input == null) {
-                throw new NullReferenceException(nameof(input));
-            }
-
-            if (item1 == null) {
-                throw new NullReferenceException(nameof(item1));
-            }
-
-            if (item2 == null) {
-                throw new NullReferenceException(nameof(item2));
-            }
-
-            return input.Equals(item1) ||
-                   input.Equals(item2) ||
-                   IsBetween(input, item1, item2);
-        }
+        public static bool IsWithin<T>(T input, T item1, T item2) =>
+            input.Equals(item1) ||
+            input.Equals(item2) ||
+            IsBetween(input, item1, item2);
 
         /// <summary>
         /// Checks whether input value is within zero and specified upper boundary

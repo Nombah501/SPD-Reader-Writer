@@ -14,6 +14,9 @@ using System.ComponentModel;
 using System.IO;
 using System.Text;
 using SpdReaderWriterCore.SPD;
+using static System.String;
+using static SpdReaderWriterCore.Data;
+using static SpdReaderWriterCore.Data.TrimPosition;
 
 namespace SpdReaderWriterCore {
 
@@ -165,14 +168,14 @@ namespace SpdReaderWriterCore {
 
                 // Decompress database
                 const byte separatorByte = 0x0A;
-                string[] names = Data.BytesToString(Data.Gzip(Resources.Database.IdCodes[i], Data.GzipMethod.Decompress)).Split((char)separatorByte);
+                string[] names = BytesToString(Gzip(Resources.Database.IdCodes[i], GzipMethod.Decompress)).Split((char)separatorByte);
 
                 // Iterate through manufacturer codes
                 for (byte j = 0; j < names.Length; j++) {
-                    if (Data.StringContains(names[j], name)) {
+                    if (StringContains(names[j], name)) {
                         return new ManufacturerIdCodeData {
                             ContinuationCode = i,
-                            ManufacturerCode = Data.SetBit(j, 7, Data.GetParity(j, Data.Parity.Odd) == 1)
+                            ManufacturerCode = SetBit(j, 7, GetParity(j, Parity.Odd) == 1)
                         };
                     }
                 }
@@ -198,8 +201,8 @@ namespace SpdReaderWriterCore {
             //}
 
             // Lookup name by continuation code and manufacturer's ID
-            byte spdContinuationCode = Data.SetBit((byte)(input >> 8), 7, false);
-            byte spdManufacturerCode = Data.SetBit((byte)input, 7, false); // Ignore parity bit
+            byte spdContinuationCode = SetBit((byte)(input >> 8), 7, false);
+            byte spdManufacturerCode = SetBit((byte)input, 7, false); // Ignore parity bit
 
             if (spdContinuationCode > Resources.Database.IdCodes.Length - 1) {
                 return "?";
@@ -207,8 +210,8 @@ namespace SpdReaderWriterCore {
 
             // Decompress database
             const byte separatorByte = 0x0A;
-            byte[] idTableCharArray = Data.Gzip(Resources.Database.IdCodes[spdContinuationCode], Data.GzipMethod.Decompress);
-            string[] names = Data.BytesToString(idTableCharArray).Split((char)separatorByte);
+            byte[] idTableCharArray = Gzip(Resources.Database.IdCodes[spdContinuationCode], GzipMethod.Decompress);
+            string[] names = BytesToString(idTableCharArray).Split((char)separatorByte);
 
             return spdManufacturerCode <= names.Length ? names[spdManufacturerCode - 1] : "";
         }
@@ -244,18 +247,20 @@ namespace SpdReaderWriterCore {
                 case RamType.SDRAM:
                     spd = new SDRAM(input);
                     break;
+                default:
+                    return Empty;
             }
 
             // Part number for Kingston DDR2 and DDR SPDs
-            if ((rt == RamType.DDR2 || rt == RamType.DDR) &&
-                (GetManufacturerId(input) == 0x0198 || FindManufacturerId("Kingston") == spd?.ManufacturerIdCode)) {
-
-                byte[] chars = Data.TrimArray(input, 16, Data.TrimPosition.Start);
-
-                return Data.BytesToString(chars);
+            if ((rt != RamType.DDR2 && rt != RamType.DDR) ||
+                (GetManufacturerId(input) != 0x0198 && FindManufacturerId("Kingston") != spd.ManufacturerIdCode)) {
+                return TrimNonAscii(spd.PartNumber);
             }
 
-            return Data.TrimNonAscii(spd?.PartNumber);
+            byte[] chars = TrimArray(input, 16, Start);
+
+            return BytesToString(chars);
+
         }
 
         /// <summary>
@@ -354,7 +359,7 @@ namespace SpdReaderWriterCore {
             public SignalLoadingData SignalLoading;
 
             public override string ToString() {
-                return Monolithic ? "Monolithic" : Data.GetEnumDescription(SignalLoading);
+                return Monolithic ? "Monolithic" : GetEnumDescription(SignalLoading);
             }
         }
 
@@ -506,10 +511,10 @@ namespace SpdReaderWriterCore {
             public byte Week;
 
             public override string ToString() {
-                ushort year = (ushort)(Data.ByteToBinaryCodedDecimal(Year) + 2000);
-                byte week   = Data.ByteToBinaryCodedDecimal(Week);
+                ushort year = (ushort)(ByteToBinaryCodedDecimal(Year) + 2000);
+                byte week   = ByteToBinaryCodedDecimal(Week);
 
-                return Data.IsBetween(week, 0, 53) ? $"{year:D4}/{week:D2}" : "";
+                return IsBetween(week, 0, 53) ? $"{year:D4}/{week:D2}" : "";
             }
         }
 
@@ -536,7 +541,7 @@ namespace SpdReaderWriterCore {
         /// </summary>
         public struct Crc16Data {
             public byte[] Contents; // Contents incl. checksum
-            public ushort Checksum => Data.Crc16(Data.TrimArray(Contents, Contents.Length - 2, Data.TrimPosition.End), 0x1021);
+            public ushort Checksum => Crc16(TrimArray(Contents, Contents.Length - 2, End), 0x1021);
 
             /// <summary>
             /// Validates data checksum
@@ -557,7 +562,7 @@ namespace SpdReaderWriterCore {
                 return Contents;
             }
 
-            public override string ToString() => ((CrcStatus)Data.BoolToNum<byte>(Validate())).ToString();
+            public override string ToString() => ((CrcStatus)BoolToNum<byte>(Validate())).ToString();
         }
 
         /// <summary>
@@ -565,7 +570,7 @@ namespace SpdReaderWriterCore {
         /// </summary>
         public struct Crc8Data {
             public byte[] Contents; // Contents incl. checksum
-            public byte Checksum => Data.Crc(Data.TrimArray(Contents, Contents.Length - 1, Data.TrimPosition.End));
+            public byte Checksum => Crc(TrimArray(Contents, Contents.Length - 1, End));
 
             /// <summary>
             /// Validates data checksum
@@ -585,7 +590,7 @@ namespace SpdReaderWriterCore {
                 return Contents;
             }
 
-            public override string ToString() => ((CrcStatus)Data.BoolToNum<byte>(Validate())).ToString();
+            public override string ToString() => ((CrcStatus)BoolToNum<byte>(Validate())).ToString();
         }
 
         /// <summary>
@@ -674,7 +679,7 @@ namespace SpdReaderWriterCore {
 
             public float ToMicroseconds() {
 
-                byte refPerValue = Data.SetBit(RefreshPeriod, 7, false);
+                byte refPerValue = SetBit(RefreshPeriod, 7, false);
                 float normal = 15.625F;
 
                 // Normal
@@ -683,12 +688,12 @@ namespace SpdReaderWriterCore {
                 }
 
                 // Reduced
-                if (Data.IsWithin(refPerValue, 0x01, 0x02)) {
+                if (IsWithin(refPerValue, 0x01, 0x02)) {
                     return normal * 0.25F * refPerValue;
                 }
 
                 // Extended
-                if (Data.IsWithin(refPerValue, 0x03, 0x05)) {
+                if (IsWithin(refPerValue, 0x03, 0x05)) {
                     return (float)(normal * Math.Pow(2, refPerValue - 1));
                 }
 
@@ -712,7 +717,7 @@ namespace SpdReaderWriterCore {
             /// <summary>
             /// EPP Identifier String ("NVm")
             /// </summary>
-            public static byte[] EPP => Data.ReverseArray(Encoding.ASCII.GetBytes("NVm"));
+            public static byte[] EPP => ReverseArray(Encoding.ASCII.GetBytes("NVm"));
 
             /// <summary>
             /// AMD EXPO Identifier String ("EXPO")
