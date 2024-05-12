@@ -166,13 +166,12 @@ namespace SpdReaderWriterCore {
         public bool ReadEx<T>(ushort offset, out T output) {
 
             output = default;
+            bool result = false;
 
-            if (!LockMutex(PciMutex, PciMutexTimeout)) {
-                return false;
+            if (LockPciMutex()) {
+                result = Kernel.ReadPciConfigEx(Bus, Device, Function, offset, out output);
+                UnlockPciMutex();
             }
-
-            bool result = Kernel.ReadPciConfigEx(Bus, Device, Function, offset, out output);
-            UnlockMutex(PciMutex);
 
             return result;
         }
@@ -194,12 +193,12 @@ namespace SpdReaderWriterCore {
         /// <returns><see langword="true"/> if the function succeeds</returns>
         public bool WriteEx<T>(ushort offset, T value) {
 
-            if (!LockMutex(PciMutex, PciMutexTimeout)) {
-                return false;
-            }
+            bool result = false;
 
-            bool result = Kernel.WritePciConfigEx(Bus, Device, Function, offset, value);
-            UnlockMutex(PciMutex);
+            if (LockPciMutex()) {
+                result = Kernel.WritePciConfigEx(Bus, Device, Function, offset, value);
+                UnlockPciMutex();
+            }
 
             return result;
         }
@@ -257,6 +256,7 @@ namespace SpdReaderWriterCore {
         /// and <paramref name="deviceId">Device ID</paramref></returns>
         public static PciConfig[] FindDevicesById(VendorId vendorId, DeviceId deviceId, int maxCount) {
 
+            //if (maxCount > MaxPciCount || maxCount == 0) 
             if (IsOutside(maxCount, 1, MaxPciCount)) {
                 throw new ArgumentOutOfRangeException(nameof(maxCount));
             }
@@ -265,7 +265,7 @@ namespace SpdReaderWriterCore {
 
             bool stopFlag = false;
 
-            if (LockMutex(PciMutex, PciMutexTimeout)) {
+            if (LockPciMutex()) {
 
                 PciConfig pciConfig = new PciConfig();
 
@@ -306,7 +306,7 @@ namespace SpdReaderWriterCore {
                     }
                 }
 
-                UnlockMutex(PciMutex);
+                UnlockPciMutex();
             }
 
             return result.ToArray();
@@ -383,6 +383,7 @@ namespace SpdReaderWriterCore {
         /// and <paramref name="programIf"/></returns>
         public static PciConfig[] FindDevicesByClass(BaseClassType baseClass, SubClassType subClass, ProgramIf programIf, int maxCount) {
 
+            //if (maxCount > MaxPciCount || maxCount == 0)
             if (IsOutside(maxCount, 1, MaxPciCount)) {
                 throw new ArgumentOutOfRangeException(nameof(maxCount));
             }
@@ -391,7 +392,7 @@ namespace SpdReaderWriterCore {
 
             bool stopFlag = false;
 
-            if (LockMutex(PciMutex, PciMutexTimeout)) {
+            if (LockPciMutex()) {
 
                 PciConfig pciConfig = new PciConfig();
 
@@ -432,7 +433,7 @@ namespace SpdReaderWriterCore {
                     }
                 }
 
-                UnlockMutex(PciMutex);
+                UnlockPciMutex();
             }
 
             return result.ToArray();
@@ -573,13 +574,25 @@ namespace SpdReaderWriterCore {
         private static int MaxPciCount => (_maxPciBusIndex + 1) * 256 /*(MAX_PCI_DEVICE_INDEX + 1) * (MAX_PCI_FUNCTION_INDEX + 1)*/;
 
         /// <summary>
+        /// Locks PCI config mutex
+        /// </summary>
+        /// <returns><see langword="true"/> if the function succeeds</returns>
+        public static bool LockPciMutex() => LockMutex(PciMutex, PciMutexTimeout);
+
+        /// <summary>
+        /// Releases PCI config mutex
+        /// </summary>
+        /// <returns><see langword="true"/> if the function succeeds</returns>
+        public static bool UnlockPciMutex() => UnlockMutex(PciMutex);
+
+        /// <summary>
         /// Global PCI access mutex
         /// </summary>
-        internal static Mutex PciMutex = CreateMutex("Global\\Access_PCI");
+        private static readonly Mutex PciMutex = CreateMutex("Global\\Access_PCI");
 
         /// <summary>
         /// Global PCI access mutex timeout
         /// </summary>
-        internal static int PciMutexTimeout = 5000;
+        private static readonly int PciMutexTimeout = 5000;
     }
 }

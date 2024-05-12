@@ -11,6 +11,7 @@
 
 using System.Threading;
 using static SpdReaderWriterCore.Data;
+using static SpdReaderWriterCore.Kernel;
 
 namespace SpdReaderWriterCore {
 
@@ -69,13 +70,12 @@ namespace SpdReaderWriterCore {
         public bool ReadEx<T>(ushort offset, out T output) {
 
             output = default;
+            bool result = false;
 
-            if (!LockMutex(IsaMutex, IsaMutexTimeout)) {
-                return false;
+            if (LockIoPortMutex()) {
+                result = ReadIoPortEx((ushort)(BaseAddress + offset), out output);
+                UnlockIoPortMutex();
             }
-
-            bool result = Kernel.ReadIoPortEx((ushort)(BaseAddress + offset), out output);
-            UnlockMutex(IsaMutex);
 
             return result;
         }
@@ -98,24 +98,36 @@ namespace SpdReaderWriterCore {
         /// <returns><see langword="true"/> if the function succeeds</returns>
         public bool WriteEx<T>(ushort offset, T value) {
 
-            if (!LockMutex(IsaMutex, IsaMutexTimeout)) {
-                return false;
-            }
+            bool result = false;
 
-            bool result = Kernel.WriteIoPortEx((ushort)(BaseAddress + offset), value);
-            UnlockMutex(IsaMutex);
+            if (LockIoPortMutex()) {
+                result = WriteIoPortEx((ushort)(BaseAddress + offset), value);
+                UnlockIoPortMutex();
+            }
 
             return result;
         }
 
         /// <summary>
+        /// Locks IO port mutex
+        /// </summary>
+        /// <returns><see langword="true"/> if the function succeeds</returns>
+        public static bool LockIoPortMutex() => LockMutex(IsaMutex, IsaMutexTimeout);
+
+        /// <summary>
+        /// Releases IO port mutex
+        /// </summary>
+        /// <returns><see langword="true"/> if the function succeeds</returns>
+        public static bool UnlockIoPortMutex() => UnlockMutex(IsaMutex);
+
+        /// <summary>
         /// Global ISA access mutex
         /// </summary>
-        internal static Mutex IsaMutex = CreateMutex("Global\\Access_ISABUS.HTP.Method");
+        private static readonly Mutex IsaMutex = CreateMutex("Global\\Access_ISABUS.HTP.Method");
 
         /// <summary>
         /// Global ISA access mutex timeout
         /// </summary>
-        internal static int IsaMutexTimeout = 1000;
+        private static readonly int IsaMutexTimeout = 1000;
     }
 }
