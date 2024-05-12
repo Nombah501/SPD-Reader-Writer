@@ -508,9 +508,7 @@ namespace SpdReaderWriterCore {
         public static T HexStringToNumber<T>(string input) {
 
             for (int i = input.Length - 1; i >= 0; i--) {
-
                 char c = input[i];
-
                 if (!ValidateHex(c)) {
                     throw new ArgumentOutOfRangeException(c.ToString());
                 }
@@ -526,13 +524,11 @@ namespace SpdReaderWriterCore {
         /// <param name="input">Input character</param>
         /// <returns>Numeric value of input hex string</returns>
         public static T HexStringToNumber<T>(char input) {
+
             if (ValidateHex(input)) {
-                if (IsWithin(input & ~0x20, 'A', 'F')) {
-                    return ConvertTo<T>((input & 0xF) + 9);
-                }
-                if (IsWithin(input, '0', '9')) {
-                    return ConvertTo<T>(input - 0x30);
-                }
+                return IsWithin(input, '0', '9') 
+                    ? ConvertTo<T>(input - 0x30)
+                    : ConvertTo<T>((input & 0xF) + 9);
             }
 
             throw new ArgumentOutOfRangeException(nameof(input));
@@ -691,17 +687,8 @@ namespace SpdReaderWriterCore {
         /// <typeparam name="T">Data type</typeparam>
         /// <param name="input">Input symbol</param>
         /// <returns><see langword="true"/> if <see cref="input"/> is within ASCII range</returns>
-        public static bool IsAscii<T>(T input) {
-            if (input == null) {
-                throw new NullReferenceException(nameof(input));
-            }
-
-            if (GetDataSize(input.GetType()) > DataSize.Word) {
-                return false;
-            }
-
-            return IsWithin(ConvertTo<char>(input), 0x20, 0x7E);
-        }
+        public static bool IsAscii<T>(T input) => 
+            GetDataSize(input.GetType()) <= DataSize.Word && IsWithin(ConvertTo<char>(input), 0x20, 0x7E);
 
         /// <summary>
         /// Checks if input string is within ASCII range
