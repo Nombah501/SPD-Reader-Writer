@@ -9,10 +9,13 @@
 
 */
 
+using System.Reflection;
+
 namespace SpdReaderWriterCore {
     /// <summary>
     /// Platform Vendor ID
     /// </summary>
+    [Obfuscation(Exclude = true)]
     public enum VendorId : ushort {
         AMD    = 0x1022,
         ATI    = 0x1002, // Former ATI vendor ID which is now owned by AMD, who has 2 vendor IDs

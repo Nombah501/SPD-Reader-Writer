@@ -9,11 +9,14 @@
 
 */
 
+using System.Reflection;
+
 namespace SpdReaderWriterCore {
     /// <summary>
     /// Intel: ICH/PCH device ID (LPC/eSPI controller or ISA bridge)
     /// AMD:   SMBus device ID
     /// </summary>
+    [Obfuscation(Exclude = true)]
     public enum DeviceId : ushort {
 
         // Invalid
