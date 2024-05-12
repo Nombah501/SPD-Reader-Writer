@@ -89,15 +89,17 @@ namespace SpdReaderWriter {
             }
 
             // Wait for input to prevent application from closing automatically
-            if (!Debugger.IsAttached && args.Length != 0) return;
+            if (!Debugger.IsAttached && args.Length != 0) {
+                return;
+            }
             Console.WriteLine("\nPress [enter] to quit.\n");
             Console.ReadLine();
         }
 
         static void ShowBanner() {
             string[] header = {
-                "   SPD-RW - EEPROM SPD reader and writer",
-                "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
+                "SPD-RW - SPD reader and writer",
+                "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~",
                 "Version {0}",
                 "(C) 2021-2024 A213M",
                 ""
@@ -502,12 +504,14 @@ namespace SpdReaderWriter {
             ushort address = Data.StringToNum<ushort>(Args[1]);
             ushort length = (ushort)(Args.Length > 2 ? Data.StringToNum<ushort>(Args[2]) : 256);
 
-            Console.WriteLine($"Reading IO port at address {Args[1]}\n");
+            IoPort ioPort = new IoPort(address);
+
+            Console.WriteLine($"Reading IO port at address {address}\n");
 
             byte[] data = new byte[length];
 
-            for (int i = 0; i < data.Length; i++) {
-                data[i] = Kernel.ReadIoPort<byte>((ushort)(address + i));
+            for (ushort i = 0; i < data.Length; i++) {
+                ioPort.ReadEx(i, out data[i]);
             }
 
             Driver.Stop();
@@ -599,7 +603,7 @@ namespace SpdReaderWriter {
 
                     blocks = new[] { Data.StringToNum<int>(Args[3]) };
 
-                    if (blocks[0] > 15 || blocks[0] < 0 ||
+                    if (Data.IsOutside(blocks[0], 0, 15) ||
                         (blocks[0] > 3 && ramType == Spd.RamType.DDR4) ||
                         (blocks[0] > 0 && ramType != Spd.RamType.DDR4 && ramType != Spd.RamType.DDR5)) {
                         throw new ArgumentOutOfRangeException("Incorrect block number specified");
@@ -785,7 +789,7 @@ namespace SpdReaderWriter {
             byte[] smBuses = smbus.SmBuses;
             if (smBuses.Length > 0) {
                 foreach (byte bus in smBuses) {
-                    Console.WriteLine($"Found SMBus # {bus} ({smbus})");
+                    Console.WriteLine($"Found SMBus # {bus} ({smbus.ToString()})");
                 }
             }
             else {
@@ -815,7 +819,7 @@ namespace SpdReaderWriter {
         /// Prints byte array in a grid pattern
         /// </summary>
         /// <param name="input">Input byte array</param>
-        static void ConsoleDisplayData(byte[] input) => 
+        static void ConsoleDisplayData(byte[] input) =>
             ConsoleDisplayData(input, ShowColor);
 
         /// <summary>
@@ -827,6 +831,7 @@ namespace SpdReaderWriter {
             for (int i = 0; i < input.Length; i++) {
                 ConsoleDisplayByte(i, input[i], 16, true, color);
             }
+            Console.WriteLine();
         }
 
         /// <summary>
