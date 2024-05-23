@@ -542,6 +542,7 @@ namespace SpdReaderWriterCore {
         public struct Register {
             public static byte VendorId          = 0x00;
             public static byte DeviceId          = 0x02;
+            public static byte Command           = 0x04;
             public static byte Status            = 0x06;
             public static byte RevisionId        = 0x08;
             public static byte ProgramInterface  = 0x09;
