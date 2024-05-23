@@ -430,8 +430,8 @@ namespace SpdReaderWriterCore {
                 return arduino.ExecuteCommand<byte[]>(
                     SpdReadPage,
                     arduino.I2CAddress,
-                    (byte)(offset >> 8), // MSB
-                    (byte)offset,        // LSB
+                    offset >> 8,   // MSB
+                    offset & 0xFF, // LSB
                     length);
             }
             catch {
@@ -465,19 +465,16 @@ namespace SpdReaderWriterCore {
         /// <returns><see langword="true"/> if <paramref name="value"/> is written to <paramref name="offset"/></returns>
         public static bool Write(Arduino arduino, ushort offset, byte[] value) {
 
-            // Prepare command
-            byte[] command = {
-                (byte) SpdWritePage,
-                arduino.I2CAddress,
-                (byte)(offset >> 8), // MSB
-                (byte)offset,        // LSB
-                (byte)value.Length
-            };
-
             try {
                 return CheckOffset(arduino, offset) &&
                        CheckPageSize(value) &&
-                       arduino.ExecuteCommand<bool>(MergeArray(command, value));
+                       arduino.ExecuteCommand<bool>(
+                           SpdWritePage,
+                           arduino.I2CAddress,
+                           offset >> 8,   // MSB
+                           offset & 0xFF, // LSB
+                           value.Length, 
+                           value);
             }
             catch {
                 throw new Exception($"Unable to write page of {value.Length} byte(s) to # 0x{offset:X4} at {arduino.PortName}:{arduino.I2CAddress}");
@@ -563,8 +560,8 @@ namespace SpdReaderWriterCore {
                 return arduino.ExecuteCommand<bool>(
                     SpdWriteTest,
                     arduino.I2CAddress,
-                    (byte)(offset >> 8), // MSB
-                    (byte)offset);       // LSB
+                    offset >> 8,    // MSB
+                    offset & 0xFF); // LSB
             }
             catch {
                 throw new Exception($"Unable to perform offset # 0x{offset:X4} write test at {arduino.PortName}:{arduino.I2CAddress}");

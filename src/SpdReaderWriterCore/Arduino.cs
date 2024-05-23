@@ -671,10 +671,7 @@ namespace SpdReaderWriterCore {
                     return false;
                 }
 
-                // Prepare a byte array containing cmd byte + name length + name
-                byte[] command = { (byte)Command.Name, (byte)newName.Length };
-
-                return ExecuteCommand<bool>(command, Encoding.ASCII.GetBytes(newName));
+                return ExecuteCommand<bool>(Command.Name, newName.Length, Encoding.ASCII.GetBytes(newName));
             }
             catch {
                 throw new Exception($"Unable to assign name to {PortName}");
@@ -1087,7 +1084,7 @@ namespace SpdReaderWriterCore {
         }
 
         /// <summary>
-        /// Executes a command with multiple parameters on the device
+        /// Executes a command with multiple or no parameters on the device
         /// </summary>
         /// <typeparam name="T">Response data type</typeparam>
         /// <param name="command">Command to be executed on the device</param>
@@ -1095,25 +1092,13 @@ namespace SpdReaderWriterCore {
         /// <returns>Data type value</returns>
         public T ExecuteCommand<T>(object command, params object[] p) {
 
-            byte[] commands = new byte[1 + p.Length];
-            commands[0] = ConvertTo<byte>(command);
+            List<byte> commandList = new List<byte> {
+                ConvertTo<byte>(command)
+            };
 
-            for (int i = 0; i < p.Length; i++) {
-                commands[i + 1] = ConvertTo<byte>(p[i]);
-            }
+            commandList.AddRange(ObjectToArray<byte>(p));
 
-            return ExecuteCommand<T>(commands);
-        }
-
-        /// <summary>
-        /// Executes a multi byte command on the device
-        /// </summary>
-        /// <typeparam name="T">Response data type</typeparam>
-        /// <param name="command">Command and parameters to be executed on the device</param>
-        /// <returns>Data type value</returns>
-        private T ExecuteCommand<T>(byte[] command) {
-
-            byte[] response = ExecuteCommand(command);
+            byte[] response = ExecuteCommand(commandList.ToArray());
 
             if (response.Length == 1) {
                 return ConvertTo<T>(response[0]);
