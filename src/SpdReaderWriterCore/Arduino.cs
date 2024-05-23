@@ -674,7 +674,7 @@ namespace SpdReaderWriterCore {
                 // Prepare a byte array containing cmd byte + name length + name
                 byte[] command = { (byte)Command.Name, (byte)newName.Length };
 
-                return ExecuteCommand<bool>(MergeArray(command, Encoding.ASCII.GetBytes(newName)));
+                return ExecuteCommand<bool>(command, Encoding.ASCII.GetBytes(newName));
             }
             catch {
                 throw new Exception($"Unable to assign name to {PortName}");
