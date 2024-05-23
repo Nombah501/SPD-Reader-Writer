@@ -1095,11 +1095,11 @@ namespace SpdReaderWriterCore {
         /// <returns>Data type value</returns>
         public T ExecuteCommand<T>(object command, params object[] p) {
 
-            object[] commands = new object[1 + p.Length];
-            commands[0] = command;
+            byte[] commands = new byte[1 + p.Length];
+            commands[0] = ConvertTo<byte>(command);
 
             for (int i = 0; i < p.Length; i++) {
-                commands[i + 1] = p[i];
+                commands[i + 1] = ConvertTo<byte>(p[i]);
             }
 
             return ExecuteCommand<T>(commands);
@@ -1111,15 +1111,9 @@ namespace SpdReaderWriterCore {
         /// <typeparam name="T">Response data type</typeparam>
         /// <param name="command">Command and parameters to be executed on the device</param>
         /// <returns>Data type value</returns>
-        private T ExecuteCommand<T>(IEnumerable command) {
+        private T ExecuteCommand<T>(byte[] command) {
 
-            Queue<byte> rawBytes = new Queue<byte>();
-
-            foreach (byte b in ObjectToArray<byte>(command)) {
-                rawBytes.Enqueue(b);
-            }
-
-            byte[] response = ExecuteCommand(rawBytes.ToArray());
+            byte[] response = ExecuteCommand(command);
 
             if (response.Length == 1) {
                 return ConvertTo<T>(response[0]);
