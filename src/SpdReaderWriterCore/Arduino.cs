@@ -1087,67 +1087,23 @@ namespace SpdReaderWriterCore {
         }
 
         /// <summary>
-        /// Executes a command on the device
+        /// Executes a command with multiple parameters on the device
         /// </summary>
         /// <typeparam name="T">Response data type</typeparam>
         /// <param name="command">Command to be executed on the device</param>
+        /// <param name="p">Command parameters</param>
         /// <returns>Data type value</returns>
-        public T ExecuteCommand<T>(object command) => ExecuteCommand<T>(new[] { command });
+        public T ExecuteCommand<T>(object command, params object[] p) {
 
-        /// <summary>
-        /// Executes a command with one parameter on the device
-        /// </summary>
-        /// <typeparam name="T">Response data type</typeparam>
-        /// <param name="command">Command to be executed on the device</param>
-        /// <param name="p1">Command parameter</param>
-        /// <returns>Data type value</returns>
-        public T ExecuteCommand<T>(object command, object p1) => ExecuteCommand<T>(new[] { command, p1 });
+            object[] commands = new object[1 + p.Length];
+            commands[0] = command;
 
-        /// <summary>
-        /// Executes a command with two parameters on the device
-        /// </summary>
-        /// <typeparam name="T">Response data type</typeparam>
-        /// <param name="command">Command to be executed on the device</param>
-        /// <param name="p1">First parameter</param>
-        /// <param name="p2">Second parameter</param>
-        /// <returns>Data type value</returns>
-        public T ExecuteCommand<T>(object command, object p1, object p2) => ExecuteCommand<T>(new[] { command, p1, p2 });
+            for (int i = 0; i < p.Length; i++) {
+                commands[i + 1] = p[i];
+            }
 
-        /// <summary>
-        /// Executes a command with three parameters on the device
-        /// </summary>
-        /// <typeparam name="T">Response data type</typeparam>
-        /// <param name="command">Command to be executed on the device</param>
-        /// <param name="p1">First parameter</param>
-        /// <param name="p2">Second parameter</param>
-        /// <param name="p3">Third parameter</param>
-        /// <returns>Data type value</returns>
-        public T ExecuteCommand<T>(object command, object p1, object p2, object p3) => ExecuteCommand<T>(new[] { command, p1, p2, p3 });
-
-        /// <summary>
-        /// Executes a command with four parameters on the device
-        /// </summary>
-        /// <typeparam name="T">Response data type</typeparam>
-        /// <param name="command">Command to be executed on the device</param>
-        /// <param name="p1">First parameter</param>
-        /// <param name="p2">Second parameter</param>
-        /// <param name="p3">Third parameter</param>
-        /// <param name="p4">Fourth parameter</param>
-        /// <returns>Data type value</returns>
-        public T ExecuteCommand<T>(object command, object p1, object p2, object p3, object p4) => ExecuteCommand<T>(new[] { command, p1, p2, p3, p4 });
-
-        /// <summary>
-        /// Executes a command with five parameters on the device
-        /// </summary>
-        /// <typeparam name="T">Response data type</typeparam>
-        /// <param name="command">Command to be executed on the device</param>
-        /// <param name="p1">First parameter</param>
-        /// <param name="p2">Second parameter</param>
-        /// <param name="p3">Third parameter</param>
-        /// <param name="p4">Fourth parameter</param>
-        /// <param name="p5">Fifth parameter</param>
-        /// <returns>Data type value</returns>
-        public T ExecuteCommand<T>(object command, object p1, object p2, object p3, object p4, object p5) => ExecuteCommand<T>(new[] { command, p1, p2, p3, p4, p5 });
+            return ExecuteCommand<T>(commands);
+        }
 
         /// <summary>
         /// Executes a multi byte command on the device
