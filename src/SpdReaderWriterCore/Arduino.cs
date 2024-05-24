@@ -667,11 +667,8 @@ namespace SpdReaderWriterCore {
             try {
                 string newName = name.Trim();
 
-                if (newName == GetName()) {
-                    return false;
-                }
-
-                return ExecuteCommand<bool>(Command.Name, newName.Length, Encoding.ASCII.GetBytes(newName));
+                return newName != GetName() &&
+                       ExecuteCommand<bool>(Command.Name, (byte)newName.Length, Encoding.ASCII.GetBytes(newName));
             }
             catch {
                 throw new Exception($"Unable to assign name to {PortName}");
@@ -702,8 +699,8 @@ namespace SpdReaderWriterCore {
                 return ExecuteCommand<byte[]>(
                     Command.Eeprom,
                     Command.Get,
-                    offset >> 8, offset & 0xFF, // offset MSB and LSB
-                    length >> 8, length & 0xFF  // length MSB and LSB
+                    offset, 
+                    length
                 );
             }
             catch (Exception ex) {
@@ -1096,7 +1093,9 @@ namespace SpdReaderWriterCore {
                 ConvertTo<byte>(command)
             };
 
-            commandList.AddRange(ObjectToArray<byte>(p));
+            if (p.Length > 0) {
+                commandList.AddRange(ObjectToArray<byte>(p));
+            }
 
             byte[] response = ExecuteCommand(commandList.ToArray());
 
@@ -1124,7 +1123,7 @@ namespace SpdReaderWriterCore {
                     : response.Length;
 
                 for (int i = 0; i < dataSizeLimit; i++) {
-                    outputBuffer |= (uint)(response[i] << (8 * i));
+                    outputBuffer |= (uint)(response[i] << (BitsInByte * i));
                 }
 
                 return ConvertTo<T>(outputBuffer);
@@ -1140,7 +1139,7 @@ namespace SpdReaderWriterCore {
         /// <returns>A byte array received from the device in response</returns>
         private byte[] ExecuteCommand(byte[] command) {
             if (command.Length == 0) {
-                throw new ArgumentException("Value cannot be null or whitespace.", nameof(command));
+                throw new ArgumentException("Value cannot be null or whitespace", nameof(command));
             }
 
             if (!IsReady) {
