@@ -430,8 +430,7 @@ namespace SpdReaderWriterCore {
                 return arduino.ExecuteCommand<byte[]>(
                     SpdReadPage,
                     arduino.I2CAddress,
-                    offset >> 8,   // MSB
-                    offset & 0xFF, // LSB
+                    offset,
                     length);
             }
             catch {
@@ -471,9 +470,8 @@ namespace SpdReaderWriterCore {
                        arduino.ExecuteCommand<bool>(
                            SpdWritePage,
                            arduino.I2CAddress,
-                           offset >> 8,   // MSB
-                           offset & 0xFF, // LSB
-                           value.Length, 
+                           offset,
+                           (byte)value.Length,
                            value);
             }
             catch {
@@ -560,8 +558,7 @@ namespace SpdReaderWriterCore {
                 return arduino.ExecuteCommand<bool>(
                     SpdWriteTest,
                     arduino.I2CAddress,
-                    offset >> 8,    // MSB
-                    offset & 0xFF); // LSB
+                    offset);
             }
             catch {
                 throw new Exception($"Unable to perform offset # 0x{offset:X4} write test at {arduino.PortName}:{arduino.I2CAddress}");
