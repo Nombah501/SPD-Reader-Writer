@@ -19,6 +19,7 @@ using System.IO.Compression;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using static System.String;
@@ -31,6 +32,11 @@ namespace SpdReaderWriterCore {
     public class Data {
 
         /// <summary>
+        /// Number of bits in byte
+        /// </summary>
+        public const byte BitsInByte = 8;
+
+        /// <summary>
         /// Calculates CRC16 checksum
         /// </summary>
         /// <param name="input">A byte array to be checked</param>
@@ -41,8 +47,8 @@ namespace SpdReaderWriterCore {
             ushort crc = 0;
 
             foreach (byte b in input) {
-                crc ^= (ushort)(b << 8);
-                for (byte i = 0; i < 8; i++) {
+                crc ^= (ushort)(b << BitsInByte);
+                for (byte i = 0; i < BitsInByte; i++) {
                     crc = (ushort)((crc << 1) ^ (GetBit(crc, 15) ? poly : 0));
                 }
             }
@@ -247,7 +253,7 @@ namespace SpdReaderWriterCore {
             }
 
             try {
-                return (int)GetDataSize<int>(input) * 8;
+                return (int)GetDataSize<int>(input) * BitsInByte;
             }
             catch {
                 return 0;
@@ -396,7 +402,7 @@ namespace SpdReaderWriterCore {
         /// </summary>
         /// <typeparam name="T">Data type</typeparam>
         /// <param name="input">Input data</param>
-        /// <returns>Input data size in bytes</returns>
+        /// <returns>Input data size</returns>
         public static DataSize GetDataSize<T>(object input) =>
             input == null
                 ? DataSize.Null
@@ -405,8 +411,16 @@ namespace SpdReaderWriterCore {
         /// <summary>
         /// Gets input data size in bytes
         /// </summary>
-        /// <param name="type">Type</param>
-        /// <returns>Input data size in bytes</returns>
+        /// <param name="input">Input object</param>
+        /// <returns>Input data size</returns>
+        public static DataSize GetDataSize(object input) =>
+            GetDataSize(input.GetType());
+
+        /// <summary>
+        /// Gets input data size in bytes
+        /// </summary>
+        /// <param name="type">Input type</param>
+        /// <returns>Input type size</returns>
         public static DataSize GetDataSize(Type type) =>
             type == null 
                 ? DataSize.Null 
@@ -415,8 +429,8 @@ namespace SpdReaderWriterCore {
         /// <summary>
         /// Gets input data size in bytes
         /// </summary>
-        /// <param name="t">Type code</param>
-        /// <returns>Input data size in bytes</returns>
+        /// <param name="t">Input type code</param>
+        /// <returns>Input type code size</returns>
         public static DataSize GetDataSize(TypeCode t) {
 
             if (!Enum.IsDefined(typeof(TypeCode), t))
@@ -1251,21 +1265,51 @@ namespace SpdReaderWriterCore {
         /// <typeparam name="T">Data type</typeparam>
         /// <param name="input">Input array</param>
         /// <returns>Data type array</returns>
-        public static T[] ObjectToArray<T>(object input) {
+        public static unsafe T[] ObjectToArray<T>(object input) {
 
             if (input == null) {
                 throw new NullReferenceException(nameof(input));
             }
 
-            Queue<object> arrayQueue = new Queue<object>(); // Queue for nested arrays
             Queue<T> outputQueue     = new Queue<T>();
+            Queue<object> arrayQueue = new Queue<object>(); // Queue for nested arrays
+            Queue<byte> bytesQueue   = new Queue<byte>(); // Queue for byte arrays for objects > 1 byte
+
+            byte[] ToByteArray(object* item) {
+
+                if (item == null) {
+                    throw new ArgumentNullException(nameof(item));
+                }
+
+                DataSize dataSize = GetDataSize(*item);
+
+                switch (dataSize) {
+                    case DataSize.Null:
+                        throw new NullReferenceException(nameof(item));
+                    case DataSize.Byte:
+                        bytesQueue.Enqueue(ConvertTo<byte>(*item));
+                        break;
+                    default:
+                        for (int i = 0; i < (byte)dataSize; i++) {
+                            bytesQueue.Enqueue(ConvertTo<byte>((ConvertTo<ulong>(*item) >> (BitsInByte * i)) & 0xFF));
+                        }
+                        break;
+                }
+
+                byte[] outputBytes = bytesQueue.ToArray();
+                bytesQueue.Clear();
+
+                return outputBytes;
+            }
 
             void AddItem(object item) {
                 if (item.GetType().IsArray) {
                     arrayQueue.Enqueue(item);
                 }
                 else {
-                    outputQueue.Enqueue(ConvertTo<T>(item));
+                    foreach (byte b in ToByteArray(&item)) {
+                        outputQueue.Enqueue(ConvertTo<T>(b));
+                    }
                 }
             }
 
@@ -1576,6 +1620,26 @@ namespace SpdReaderWriterCore {
         }
 
         /// <summary>
+        /// File version
+        /// </summary>
+        /// <param name="path">File path</param>
+        /// <returns>File version</returns>
+        public static string FileVersion(string path) =>
+            File.Exists(path)
+                ? FileVersionInfo.GetVersionInfo(path).FileVersion
+                : "not found";
+
+        /// <summary>
+        /// Product version
+        /// </summary>
+        /// <param name="path">File path</param>
+        /// <returns>Product version</returns>
+        public static string ProductVersion(string path) =>
+            File.Exists(path)
+                ? FileVersionInfo.GetVersionInfo(path).ProductVersion
+                : "not found";
+
+        /// <summary>
         /// File struct
         /// </summary>
         public struct DataFile {
@@ -1672,24 +1736,113 @@ namespace SpdReaderWriterCore {
         }
 
         /// <summary>
-        /// File version
+        /// DLL file parent path
         /// </summary>
-        /// <param name="path">File path</param>
-        /// <returns>File version</returns>
-        public static string FileVersion(string path) =>
-            File.Exists(path) 
-                ? FileVersionInfo.GetVersionInfo(path).FileVersion 
-                : "not found";
+        public static string ParentDirectory => Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
         /// <summary>
-        /// Product version
+        /// DLL name
+        /// </summary>
+        public static string DllName => Assembly.GetExecutingAssembly().Location.Replace(ParentDirectory, "").Replace("\\", "");
+
+        /// <summary>
+        /// Executable name
+        /// </summary>
+        public static string ExeName => Process.GetCurrentProcess().MainModule?.FileName.Replace(ParentDirectory, "").Replace("\\", "");
+
+        /// <summary>
+        /// Current process name
+        /// </summary>
+        public static string ProcessName => CurrentProcess.ProcessName;
+
+        /// <summary>
+        /// Current process
+        /// </summary>
+        public static Process CurrentProcess => Process.GetCurrentProcess();
+
+        /// <summary>
+        /// DLL GUID
+        /// </summary>
+        public static string AssemblyGuid => ((GuidAttribute)Assembly.GetExecutingAssembly().GetCustomAttributes(typeof(GuidAttribute), false).GetValue(0)).Value;
+
+        /// <summary>
+        /// SPD-RW global mutex
+        /// </summary>
+        internal static readonly Mutex GlobalMutex = new Mutex(false, $"Global\\{AssemblyGuid}");
+
+        /// <summary>
+        /// Detects if administrative privileges are present
+        /// </summary>
+        /// <returns><see langword="true"/> if administrative privileges are present</returns>
+        public static bool IsAdmin() {
+            try {
+                using (WindowsIdentity identity = WindowsIdentity.GetCurrent()) {
+                    WindowsPrincipal principal = new WindowsPrincipal(identity);
+                    return principal.IsInRole(WindowsBuiltInRole.Administrator);
+                }
+            }
+            catch {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Runs process as admin
         /// </summary>
         /// <param name="path">File path</param>
-        /// <returns>Product version</returns>
-        public static string ProductVersion(string path) =>
-            File.Exists(path) 
-                ? FileVersionInfo.GetVersionInfo(path).ProductVersion 
-                : "not found";
+        /// <returns><see langword="true"/> if operation succeeds</returns>
+        public static bool RunAsAdmin(string path) => RunAsAdmin(path, "");
+
+        /// <summary>
+        /// Runs process as admin
+        /// </summary>
+        /// <param name="path">File path</param>
+        /// <param name="args">Arguments</param>
+        /// <returns><see langword="true"/> if operation succeeds</returns>
+        public static bool RunAsAdmin(string path, string args) {
+
+            if (path == null) {
+                throw new ArgumentNullException(nameof(path));
+            }
+
+            if (path.Length == 0 || !File.Exists(path)) {
+                throw new FileNotFoundException(path);
+            }
+
+            try {
+                ProcessStartInfo startInfo = new ProcessStartInfo {
+                    UseShellExecute = true,
+                    FileName        = path,
+                    Arguments       = args
+                };
+
+                // Vista+ check
+                if (IsVistaOrNewer()) {
+                    startInfo.Verb = "runas";
+                }
+
+                return Process.Start(startInfo) != null;
+            }
+            catch {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Checks if operating system is Windows Vista or newer
+        /// </summary>
+        /// <returns><see langword="true"/> if operating system is Windows Vista or newer</returns>
+        public static bool IsVistaOrNewer() => 
+            Environment.OSVersion.Version.Major >= 6;
+
+        /// <summary>
+        /// Checks if operating system is Windows 7 or newer
+        /// </summary>
+        /// <returns><see langword="true"/> if operating system is Windows 7 or newer</returns>
+        public static bool IsSevenOrNewer() =>
+            Environment.OSVersion.Version.Major > 6 ||
+            (Environment.OSVersion.Version.Major == 6 && 
+             Environment.OSVersion.Version.Minor >= 1);
 
         /// <summary>
         /// Initializes an existing mutex instance
