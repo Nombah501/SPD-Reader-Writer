@@ -16,7 +16,7 @@
 #include <EEPROM.h>
 #include "SpdReaderWriterSettings.h"  // Settings
 
-#define FW_VER 20240325  // Firmware version number (YYYYMMDD)
+#define FW_VER 20240523  // Firmware version number (YYYYMMDD)
 
 // RAM RSWP support bitmasks
 #define DDR5 _BV(5)  // Offline mode
@@ -418,7 +418,7 @@ void cmdReadSpdPage() {
   // EEPROM address
   uint8_t address = buffer[0];
   // Offset address
-  uint16_t offset = buffer[1] << 8 | buffer[2];
+  uint16_t offset = buffer[1] | buffer[2] << 8;
   // Byte count
   uint8_t length  = buffer[3];
 
@@ -438,7 +438,7 @@ void cmdWriteSpdByte() {
   // EEPROM address
   uint8_t address = buffer[0];
   // Offset address
-  uint16_t offset = buffer[1] << 8 | buffer[2];
+  uint16_t offset = buffer[1] | buffer[2] << 8;
   // Input byte value
   uint8_t data    = buffer[3];
 
@@ -453,7 +453,7 @@ void cmdWriteSpdPage() {
   // EEPROM address
   uint8_t address = buffer[0];
   // Offset address
-  uint16_t offset = buffer[1] << 8 | buffer[2];
+  uint16_t offset = buffer[1] | buffer[2] << 8;
   // Bytes count
   uint8_t length  = buffer[3];
 
