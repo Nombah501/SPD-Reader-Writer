@@ -640,9 +640,9 @@ void cmdEeprom() {
 
   uint8_t command = buffer[0];
   // EEPROM offset
-  uint16_t offset = buffer[1] << 8 | buffer[2];
+  uint16_t offset = buffer[1] | buffer[2] << 8;
   // Byte count
-  uint16_t length = buffer[3] << 8 | buffer[4];
+  uint16_t length = buffer[3] | buffer[4] << 8;
 
   if (command == Command::Get) {
     // Output buffer
@@ -758,7 +758,7 @@ void cmdWriteTest() {
   // EEPROM address
   uint8_t address = buffer[0];
   // Offset address
-  uint16_t offset = buffer[1] << 8 | buffer[2];
+  uint16_t offset = buffer[1] | buffer[2] << 8;
 
   uint8_t data[1];
   respond(readSpdByte(address, offset, 1, data) && 
