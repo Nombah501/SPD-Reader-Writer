@@ -474,15 +474,9 @@ namespace SpdReaderWriterCore {
         /// <summary>
         /// Ensures the driver keeps running
         /// </summary>
-        private static void KeepAlive() {
-            if (!IsInstalled) {
-                InstallDriver();
-            }
-
-            if (!IsRunning) {
-                StartDriver();
-            }
-        }
+        private static bool KeepAlive() =>
+            (IsInstalled || InstallDriver()) &&
+            (IsRunning   || StartDriver());
 
         /// <summary>
         /// Opens driver handle
@@ -618,6 +612,7 @@ namespace SpdReaderWriterCore {
 
                 while (!OpenDriverHandle(out deviceHandle) && _sw.ElapsedMilliseconds < Timeout) {
                     KeepAlive();
+                    Thread.Sleep(25);
                 }
 
                 _sw.Stop();

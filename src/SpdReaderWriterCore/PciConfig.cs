@@ -415,9 +415,9 @@ namespace SpdReaderWriterCore {
                             pciConfig.SetFunction(func);
 
                             if ((Kernel.ReadPciConfig<uint>((byte)bus, dev, func, 0x08) & 0xFFFFFF00) !=
-                                (uint)(((byte)baseClass << 24) | 
-                                       ((byte)subClass  << 16) |
-                                       ((byte)programIf <<  8))) {
+                                (uint)(((byte)baseClass << (BitsInByte * 3)) | 
+                                       ((byte)subClass  << (BitsInByte * 2)) |
+                                       ((byte)programIf << (BitsInByte * 1)))) {
                                 continue;
                             }
 

@@ -12,6 +12,7 @@
 using System;
 using System.ComponentModel;
 using System.IO;
+using System.Reflection;
 using System.Text;
 using SpdReaderWriterCore.SPD;
 using static System.String;
@@ -201,7 +202,7 @@ namespace SpdReaderWriterCore {
             //}
 
             // Lookup name by continuation code and manufacturer's ID
-            byte spdContinuationCode = SetBit((byte)(input >> 8), 7, false);
+            byte spdContinuationCode = SetBit((byte)(input >> BitsInByte), 7, false);
             byte spdManufacturerCode = SetBit((byte)input, 7, false); // Ignore parity bit
 
             if (spdContinuationCode > Resources.Database.IdCodes.Length - 1) {
@@ -260,12 +261,12 @@ namespace SpdReaderWriterCore {
             byte[] chars = TrimArray(input, 16, Start);
 
             return BytesToString(chars);
-
         }
 
         /// <summary>
         /// Defines basic memory type byte value
         /// </summary>
+        [Obfuscation(Exclude = true)]
         public enum RamType : byte {
             UNKNOWN       = 0x00,
             SDRAM         = 0x04,
@@ -473,7 +474,7 @@ namespace SpdReaderWriterCore {
             public byte ContinuationCode;
             public byte ManufacturerCode;
 
-            public ushort ManufacturerId => (ushort)(ContinuationCode << 8 | ManufacturerCode);
+            public ushort ManufacturerId => (ushort)(ContinuationCode << BitsInByte | ManufacturerCode);
 
             public override string ToString() => GetManufacturerName(ManufacturerId);
 
@@ -547,7 +548,7 @@ namespace SpdReaderWriterCore {
             /// Validates data checksum
             /// </summary>
             /// <returns><see langword="true"/> if <see cref="Checksum"/> is valid for <see cref="Contents"/></returns>
-            public bool Validate() => (ushort)(Contents[Contents.Length - 1] << 8 | Contents[Contents.Length - 2]) == Checksum;
+            public bool Validate() => (ushort)(Contents[Contents.Length - 1] << BitsInByte | Contents[Contents.Length - 2]) == Checksum;
 
             /// <summary>
             /// Corrects Crc16 value
@@ -555,7 +556,7 @@ namespace SpdReaderWriterCore {
             /// <returns><see cref="Contents"/> with the correct <see cref="Checksum"/></returns>
             public byte[] Fix() {
                 if (!Validate()) {
-                    Contents[Contents.Length - 1] = (byte)(Checksum >> 8);
+                    Contents[Contents.Length - 1] = (byte)(Checksum >> BitsInByte);
                     Contents[Contents.Length - 2] = (byte)Checksum;
                 }
 
