@@ -466,7 +466,7 @@ namespace SpdReaderWriterCore {
         /// <summary>
         /// Data size
         /// </summary>
-        public enum DataSize {
+        public enum DataSize : byte {
             Null  = 0,
             Byte  = 1,
             Word  = 2,
@@ -1771,10 +1771,15 @@ namespace SpdReaderWriterCore {
         internal static readonly Mutex GlobalMutex = new Mutex(false, $"Global\\{AssemblyGuid}");
 
         /// <summary>
+        /// Detects if current user has administrative privileges
+        /// </summary>
+        public static bool IsAdmin = IsAdministartor();
+
+        /// <summary>
         /// Detects if administrative privileges are present
         /// </summary>
         /// <returns><see langword="true"/> if administrative privileges are present</returns>
-        public static bool IsAdmin() {
+        private static bool IsAdministartor() {
             try {
                 using (WindowsIdentity identity = WindowsIdentity.GetCurrent()) {
                     WindowsPrincipal principal = new WindowsPrincipal(identity);
