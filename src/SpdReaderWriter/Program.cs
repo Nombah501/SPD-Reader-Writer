@@ -105,7 +105,7 @@ namespace SpdReaderWriter {
                 ""
             };
             foreach (string line in header) {
-                Console.WriteLine(line, Data.FileVersion(Global.ParentDirectory + "\\" + Global.ExeName));
+                Console.WriteLine(line, Data.FileVersion(Data.ParentDirectory + "\\" + Data.ExeName));
             }
         }
         static void ShowHelp() {
@@ -249,7 +249,7 @@ namespace SpdReaderWriter {
                     arduino.Disconnect();
                 }
 
-                if (Global.IsAdmin()) {
+                if (Data.IsAdmin) {
                     Driver.Stop();
                     Driver.Dispose();
                 }
@@ -400,7 +400,7 @@ namespace SpdReaderWriter {
                 }
             }
             else {
-                if (!Global.IsAdmin()) {
+                if (!Data.IsAdmin) {
                     throw new AccessViolationException("Administrative privileges required");
                 }
 
@@ -426,12 +426,19 @@ namespace SpdReaderWriter {
                 ConsoleDisplayData(spdDump);
             }
 
-            Console.Write("\n\nRead {0} {1} from EEPROM at address {2} on {3} in {4} ms",
+            string source = "EEPROM";
+
+            if (Eeprom.ValidatePmicAddress(i2CAddress)) {
+                source = "PMIC";
+            }
+
+            Console.Write("\n\nRead {0} {1} from {5} at address {2} on {3} in {4} ms",
                 spdDump.Length,
                 spdDump.Length > 1 ? "bytes" : "byte",
                 i2CAddress,
                 name,
-                endTick - startTick);
+                endTick - startTick,
+                source);
 
             if (FilePath.Length > 0) {
                 try {
@@ -462,7 +469,7 @@ namespace SpdReaderWriter {
 
         private static void ReadPci() {
 
-            if (!Global.IsAdmin()) {
+            if (!Data.IsAdmin) {
                 throw new AccessViolationException("Administrative privileges required");
             }
             Driver.Start();
@@ -496,7 +503,7 @@ namespace SpdReaderWriter {
         /// Reads data from I/O port space
         /// </summary>
         private static void ReadIoPort() {
-            if (!Global.IsAdmin()) {
+            if (!Data.IsAdmin) {
                 throw new AccessViolationException("Administrative privileges required");
             }
             Driver.Start();
@@ -528,7 +535,7 @@ namespace SpdReaderWriter {
         /// </summary>
         private static void ReadMemory() {
 
-            if (!Global.IsAdmin()) {
+            if (!Data.IsAdmin) {
                 throw new AccessViolationException("Administrative privileges required");
             }
 
@@ -650,7 +657,7 @@ namespace SpdReaderWriter {
                     name = $"port {arduino.PortName}";
                 }
                 else {
-                    if (!Global.IsAdmin()) {
+                    if (!Data.IsAdmin) {
                         throw new AccessViolationException("Administrative privileges required");
                     }
 
@@ -726,7 +733,7 @@ namespace SpdReaderWriter {
 
                 List<Thread> findThreads = new List<Thread>();
 
-                if (Global.IsAdmin()) {
+                if (Data.IsAdmin) {
                     Thread findSmbusThread = new Thread(FindSmbus);
                     findThreads.Add(findSmbusThread);
                 }
@@ -780,7 +787,7 @@ namespace SpdReaderWriter {
         /// </summary>
         private static void FindSmbus() {
 
-            if (!Global.IsAdmin()) {
+            if (!Data.IsAdmin) {
                 throw new AccessViolationException("Administrative privileges required");
             }
 
