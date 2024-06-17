@@ -16,7 +16,7 @@
 #include <EEPROM.h>
 #include "SpdReaderWriterSettings.h"  // Settings
 
-#define FW_VER 20240523  // Firmware version number (YYYYMMDD)
+#define FW_VER 20240616  // Firmware version number (YYYYMMDD)
 
 // RAM RSWP support bitmasks
 #define DDR5 _BV(5)  // Offline mode
@@ -1466,9 +1466,10 @@ bool probeDeviceTypeId(uint8_t deviceSelectCode) {
 
 // DDR4 detection test (address)
 bool ddr4Detect(uint8_t address) {
-  return validateEepromAddress(address) && probeBusAddress(address)
-    ? !ddr5Detect(address) && ddr4Detect()
-    : false;
+  return validateEepromAddress(address) && 
+         probeBusAddress(address) &&
+         !ddr5Detect(address) &&
+         ddr4Detect();
 }
 
 // DDR4 detection test (generic)
