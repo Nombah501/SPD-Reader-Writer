@@ -530,6 +530,32 @@ namespace SpdReaderWriterCore {
         }
 
         /// <summary>
+        /// Attempts to lock driver object handle 
+        /// </summary>
+        /// <returns><see langword="true"/> if the function succeeds</returns>
+        public static bool TryLockHandle() {
+            try {
+                return IsAdmin && LockHandle();
+            }
+            catch {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Attempts to unlock driver object handle
+        /// </summary>
+        /// <returns><see langword="true"/> if the function succeeds</returns>
+        public static bool TryUnlockHandle() {
+            try {
+                return IsAdmin && UnlockHandle();
+            }
+            catch {
+                return false;
+            }
+        }
+
+        /// <summary>
         /// Locks driver object handle to prevent opening new handles
         /// </summary>
         internal static bool LockHandle() => LockHandle(true);
