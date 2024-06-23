@@ -182,7 +182,6 @@ namespace SpdReaderWriterCore {
         /// Disposes SMBus instance
         /// </summary>
         public void Dispose() {
-
             Driver.Stop();
             Driver.Dispose();
         }
@@ -604,10 +603,6 @@ namespace SpdReaderWriterCore {
             }
             finally {
                 UnlockMutex(SmbusMutex);
-            }
-
-            if (IsConnected) {
-                //Driver.LockHandle();
             }
 
             return IsConnected;
