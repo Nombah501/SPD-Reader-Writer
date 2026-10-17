@@ -1162,7 +1162,14 @@ namespace SpdReaderWriterCore {
         public static string GetEnumDescription(Enum e) {
 
             string name = e.ToString();
-            object[] descriptionAttributes = e.GetType().GetMember(name)[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
+            System.Reflection.MemberInfo[] members = e.GetType().GetMember(name);
+
+            // Values without a matching member (e.g. module types newer than this library) have no metadata
+            if (members.Length == 0) {
+                return $"Unknown (0x{e.ToString("X")})";
+            }
+
+            object[] descriptionAttributes = members[0].GetCustomAttributes(typeof(DescriptionAttribute), false);
 
             return descriptionAttributes.Length <= 0 ? name : ((DescriptionAttribute)descriptionAttributes[0]).Description;
         }

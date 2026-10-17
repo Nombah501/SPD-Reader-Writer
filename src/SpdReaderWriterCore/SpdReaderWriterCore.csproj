@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    SDK-style build of spdrwcore.dll, equivalent to make.cmd:
+      csc /platform:x86 /target:library /out:spdrwcore.dll /o SpdReaderWriterCore\*.cs SpdReaderWriterCore\SPD\*.cs
+    Builds on Windows or Linux:  dotnet build src/SpdReaderWriterCore -c Release
+    The assembly name and version must stay identical so the existing spdrwgui.exe loads the rebuilt DLL.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net40</TargetFramework>
+    <PlatformTarget>x86</PlatformTarget>
+    <OutputType>Library</OutputType>
+    <AssemblyName>spdrwcore</AssemblyName>
+    <RootNamespace>SpdReaderWriterCore</RootNamespace>
+    <Version>2.23.12.10</Version>
+    <AssemblyVersion>2.23.12.10</AssemblyVersion>
+    <FileVersion>2.23.12.10</FileVersion>
+    <InformationalVersion>2.23.12.10-kk-cudimm</InformationalVersion>
+    <Optimize>true</Optimize>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>7.3</LangVersion>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="System.ServiceProcess" />
+    <Reference Include="System.Data" />
+  </ItemGroup>
+</Project>

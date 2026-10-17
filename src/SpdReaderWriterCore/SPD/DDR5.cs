@@ -125,11 +125,23 @@ namespace SpdReaderWriterCore {
                 [Description("LRDIMM")]
                 LRDIMM      = 0b0100,
 
+                [Description("CUDIMM")]
+                CUDIMM      = 0b0101,
+
+                [Description("CSO-DIMM")]
+                CSODIMM     = 0b0110,
+
+                [Description("MRDIMM")]
+                MRDIMM      = 0b0111,
+
+                [Description("CAMM2")]
+                CAMM2       = 0b1000,
+
                 [Description("DDIMM")]
                 DDIMM       = 0b1010,
 
                 [Description("Solder down")]
-                Solder_Down = 0b1010,
+                Solder_Down = 0b1011,
             }
 
             /// <summary>
@@ -149,9 +161,11 @@ namespace SpdReaderWriterCore {
 
                     for (byte i = 0; i < densityPackage.Length; i++) {
 
-                        byte diePerPackageValue = Data.SubByte(RawData[4 + ASYMM_RAM_DATA_OFFSET * i], 7, 4);
+                        // Bits 7:5: 000 = monolithic, 010 = DDP, 011 = 2H 3DS, 100 = 4H 3DS, 101 = 8H 3DS, 110 = 16H 3DS
+                        byte diePerPackageValue = Data.SubByte(RawData[4 + ASYMM_RAM_DATA_OFFSET * i], 7, 3);
+                        byte[] diePerPackageList = { 1, 1, 2, 2, 4, 8, 16, 1 };
 
-                        densityPackage[i].DiePerPackageCount = (byte)(diePerPackageValue == 0 ? 1 : diePerPackageValue);
+                        densityPackage[i].DiePerPackageCount = diePerPackageList[diePerPackageValue];
                         densityPackage[i].DieDensity         = densityList[Data.SubByte(RawData[4 + ASYMM_RAM_DATA_OFFSET * i], 3, 4)];
                     }
 
@@ -194,12 +208,13 @@ namespace SpdReaderWriterCore {
             /// Byte 6 (0x006): First SDRAM I/O Width
             /// Byte 10 (0x00A): Secondary SDRAM I/O Width
             /// </summary>
+            /// <remarks>Width in bits (4, 8, 16, 32), like DDR4/DDR3 DeviceWidth; bits 7:5 encode 0 = x4, 1 = x8, 2 = x16, 3 = x32</remarks>
             public byte[] IoWidth {
                 get {
                     byte[] ioWidth = new byte[2];
 
                     for (int i = 0; i < ioWidth.Length; i++) {
-                        ioWidth[i] = Data.SubByte(RawData[6 + ASYMM_RAM_DATA_OFFSET * i], 7, 3);
+                        ioWidth[i] = (byte)(4 << Data.SubByte(RawData[6 + ASYMM_RAM_DATA_OFFSET * i], 7, 3));
                     }
 
                     return ioWidth;
@@ -280,23 +295,22 @@ namespace SpdReaderWriterCore {
             }
 
             /// <summary>
-            /// Total memory capacity of the DRAM on a DIMM
+            /// Total memory capacity of the DRAM on a DIMM, in bytes (same unit as DDR4/DDR3)
             /// </summary>
             public ulong TotalModuleCapacity {
                 get {
-                    return ModuleOrganization.RankMix == RankMix.Symmetrical
-                        ? (ulong)(
+                    return ModuleOrganization.RankMix == RankMix.Symmetrical && IoWidth[0] > 0
                         // Number of channels per DIMM *
-                        ChannelBusWidth.ChannelCount *
-                        // Primary bus width per channel / SDRAM I/O Width *
-                        ChannelBusWidth.PrimaryBusWidthPerChannel / IoWidth[0] *
-                        // Die per package*
-                        DensityPackage[0].DiePerPackageCount *
-                        // SDRAM density per die / 8 *
-                        DensityPackage[0].DieDensity / 8 *
-                        // Package ranks per channel
-                        ModuleOrganization.PackageRankCount)
-                        : 0;
+                        ? (ulong)ChannelBusWidth.ChannelCount *
+                          // Primary bus width per channel / SDRAM I/O Width *
+                          (ulong)(ChannelBusWidth.PrimaryBusWidthPerChannel / IoWidth[0]) *
+                          // Die per package *
+                          (ulong)DensityPackage[0].DiePerPackageCount *
+                          // SDRAM density per die in bytes (Gbit * 2^30 / 8) *
+                          ((ulong)DensityPackage[0].DieDensity << 27) *
+                          // Package ranks per channel
+                          (ulong)ModuleOrganization.PackageRankCount
+                        : 0UL;
                 }
             }
 

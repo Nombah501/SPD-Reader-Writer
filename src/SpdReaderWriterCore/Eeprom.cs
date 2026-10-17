@@ -374,23 +374,12 @@ namespace SpdReaderWriterCore {
         /// <param name="offset">Byte position</param>
         /// <param name="value">Byte value</param>
         /// <returns><see langword="true"/> if <paramref name="value"/> is written to <paramref name="offset"/></returns>
+        /// <remarks>
+        /// Sent as a one-byte WritePage command: some firmware forks (e.g. KK_SPD-V5.3) reject the WriteByte command,
+        /// while WritePage with a single byte is supported by every firmware revision.
+        /// </remarks>
         public static bool Write(Arduino arduino, ushort offset, byte value) {
-
-            if (!CheckOffset(arduino, offset)) {
-                return false;
-            }
-
-            try {
-                return arduino.ExecuteCommand<bool>(
-                    (byte)Arduino.Command.WriteByte,
-                    arduino.I2CAddress,
-                    (byte)(offset >> 8), // MSB
-                    (byte)offset,        // LSB
-                    value);
-            }
-            catch {
-                throw new Exception($"Unable to write \"0x{value:X2}\" to # 0x{offset:X4} at {arduino.PortName}:{arduino.I2CAddress}");
-            }
+            return Write(arduino, offset, new[] { value });
         }
 
         /// <summary>
